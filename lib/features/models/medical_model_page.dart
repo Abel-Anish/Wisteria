@@ -525,7 +525,9 @@ class _ModelCardState extends State<_ModelCard> {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => const ModelInferenceTestPage(),
+                                builder: (_) => ModelInferenceTestPage(
+                                  modelId: widget.model.id,
+                                ),
                               ),
                             );
                           },

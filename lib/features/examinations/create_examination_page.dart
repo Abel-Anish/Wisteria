@@ -9,6 +9,7 @@ import '../../core/database/repositories/examination_repository.dart';
 import '../../core/database/repositories/medical_image_repository.dart';
 import '../../core/database/repositories/medical_model_repository.dart';
 import '../../core/database/repositories/model_run_repository.dart';
+import '../../core/models/system_model_catalog.dart';
 import '../../core/services/onnx_inference_service.dart';
 import '../../core/storage/medical_image_storage.dart';
 import '../../core/theme/wisteria_theme.dart';
@@ -17,6 +18,7 @@ import '../shared/wisteria_back_button.dart';
 /// AI-first New Examination workflow.
 ///
 /// Stages:
+///   0 — Specialty Selection (Cardiology / Neurology / Ophthalmology)
 ///   A — Examination Setup (type, image selection)
 ///   B — Run AI Analysis
 ///   C — Review AI Results
@@ -48,38 +50,47 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   late final ModelRunRepository _runRepo;
   late final MedicalImageStorage _imageStorage;
 
-  // ── State ──
+  // ── Specialty selection ──
+  String? _selectedSpecialty; // 'Cardiology', 'Neurology', 'Ophthalmology'
+  List<_InstalledModelChoice> _installedModels = [];
 
-  // Stage tracking
+  // Mapping specialty → model IDs
+  static const Map<String, String> _specialtyToModelId = {
+    'Cardiology': MedicalModelRepository.bundledModelId,
+    'Neurology': MedicalModelRepository.brainTumorModelId,
+  };
+
+  // ── Stage tracking ──
   bool _inferenceCompleted = false;
   bool _examinationSaved = false;
 
-  // Examination metadata
+  // ── Examination metadata ──
   String _examinationType = 'Chest X-Ray';
   String _previousDataRange = '6 Months';
 
-  // Image
+  // ── Image ──
   File? _selectedImageFile;
   String? _selectedImageOriginalName;
   String? _savedImageId;
   String? _savedImagePath;
 
-  // Model
+  // ── Model ──
   String? _bundledModelId;
   String? _bundledVersionId;
   bool _modelAvailable = false;
   bool _loadingModel = true;
   String? _modelError;
 
-  // Inference
+  // ── Inference ──
   bool _runningInference = false;
   String? _inferenceError;
   PneumoniaInferenceResult? _inferenceResult;
+  BrainTumorInferenceResult? _brainTumorResult;
 
-  // Doctor notes
+  // ── Doctor notes ──
   final _notesController = TextEditingController();
 
-  // Save
+  // ── Save ──
   bool _saving = false;
   String? _saveError;
 
@@ -113,6 +124,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     _runRepo = ModelRunRepository(widget.database);
     _imageStorage = MedicalImageStorage();
     _ensureModel();
+    _loadInstalledModels();
   }
 
   @override
@@ -141,6 +153,31 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     }
   }
 
+  /// Load all installed models.
+  Future<void> _loadInstalledModels() async {
+    try {
+      final models = await _modelRepo.getAllModels();
+      final choices = <_InstalledModelChoice>[];
+      for (final model in models) {
+        final version = await _modelRepo.getInstalledVersion(model.id);
+        if (version == null) continue;
+        final catalogEntry = SystemModelCatalog.getById(model.id);
+        if (catalogEntry == null || !catalogEntry.isSupported) continue;
+        choices.add(_InstalledModelChoice(
+          model: model,
+          version: version,
+          catalog: catalogEntry,
+        ));
+      }
+      if (!mounted) return;
+      setState(() {
+        _installedModels = choices;
+      });
+    } catch (e) {
+      // Silent; UI will show loading error if needed.
+    }
+  }
+
   /// Pick an image file from disk.
   Future<void> _pickImage() async {
     final picked = await FilePicker.pickFile(
@@ -165,9 +202,31 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       _selectedImageOriginalName = picked.name;
       // Reset inference if image changes
       _inferenceResult = null;
+      _brainTumorResult = null;
       _inferenceCompleted = false;
       _inferenceError = null;
     });
+  }
+
+  /// Resolves the correct model ID from the selected specialty.
+  String? get _activeModelId {
+    if (_selectedSpecialty == null) return null;
+    return _specialtyToModelId[_selectedSpecialty!];
+  }
+
+  /// Whether the active specialty uses the brain tumor model.
+  bool get _isBrainTumorActive =>
+      _activeModelId == MedicalModelRepository.brainTumorModelId;
+
+  /// The image modality label for the active specialty.
+  String get _activeModality => _isBrainTumorActive ? 'MRI' : 'X-Ray';
+
+  /// The active model's display name.
+  String get _activeModelDisplayName {
+    final id = _activeModelId;
+    if (id == null) return 'AI Model';
+    final catalog = SystemModelCatalog.getById(id);
+    return catalog?.displayName ?? 'AI Model';
   }
 
   /// Create draft examination + save image to DB, then run ONNX inference.
@@ -180,6 +239,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       _runningInference = true;
       _inferenceError = null;
       _inferenceResult = null;
+      _brainTumorResult = null;
     });
 
     try {
@@ -217,7 +277,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           filePath: savedPath,
           originalFileName: _selectedImageOriginalName ?? 'unknown',
           fileFormat: extension,
-          modality: 'X-Ray',
+          modality: _activeModality,
           clinicalDate: DateTime.now(),
         );
 
@@ -225,21 +285,30 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         _savedImagePath = savedPath;
       }
 
-      // Step 3: Run ONNX inference.
-      final service = OnnxInferenceService.instance;
-      await service.initialize();
-
-      // Use the saved copy for inference (canonical path).
+      // Step 3: Run ONNX inference using the correct model.
       final inferenceFile = File(_savedImagePath ?? imageFile.path);
-      final result = await service.analyzeImage(inferenceFile);
 
-      if (!mounted) return;
-
-      setState(() {
-        _inferenceResult = result;
-        _inferenceCompleted = true;
-        _runningInference = false;
-      });
+      if (_isBrainTumorActive) {
+        final service = BrainTumorInferenceService.instance;
+        await service.initialize();
+        final result = await service.analyzeImage(inferenceFile);
+        if (!mounted) return;
+        setState(() {
+          _brainTumorResult = result;
+          _inferenceCompleted = true;
+          _runningInference = false;
+        });
+      } else {
+        final service = OnnxInferenceService.instance;
+        await service.initialize();
+        final result = await service.analyzeImage(inferenceFile);
+        if (!mounted) return;
+        setState(() {
+          _inferenceResult = result;
+          _inferenceCompleted = true;
+          _runningInference = false;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -252,7 +321,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   /// Save the full examination with inference result and doctor notes.
   Future<void> _saveExamination() async {
     if (_examinationSaved) return; // Idempotent guard
-    if (_draftExaminationId == null || _inferenceResult == null) return;
+    if (_draftExaminationId == null) return;
+    if (_inferenceResult == null && _brainTumorResult == null) return;
 
     setState(() {
       _saving = true;
@@ -260,24 +330,52 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     });
 
     try {
-      final result = _inferenceResult!;
+      // Determine which model produced the result and persist accordingly.
+      final modelId = _activeModelId ?? _bundledModelId!;
+      final versionId = _installedModels
+          .where((m) => m.model.id == modelId)
+          .map((m) => m.version.id)
+          .firstOrNull ?? _bundledVersionId!;
 
-      // Save model run + result + finding.
-      await _runRepo.saveSuccessfulRun(
-        runId: _uuid.v4(),
-        resultId: _uuid.v4(),
-        findingId: _uuid.v4(),
-        examinationId: _draftExaminationId!,
-        modelId: _bundledModelId!,
-        modelVersionId: _bundledVersionId!,
-        inputImageId: _savedImageId!,
-        inputImageDate: DateTime.now(),
-        executionTimestamp: result.executedAt,
-        prediction: result.prediction,
-        confidence: result.confidence,
-        normalProbability: result.normalProbability,
-        pneumoniaProbability: result.pneumoniaProbability,
-      );
+      if (_brainTumorResult != null) {
+        final result = _brainTumorResult!;
+        await _runRepo.saveSuccessfulBrainTumorRun(
+          runId: _uuid.v4(),
+          resultId: _uuid.v4(),
+          findingId: _uuid.v4(),
+          examinationId: _draftExaminationId!,
+          modelId: modelId,
+          modelVersionId: versionId,
+          inputImageId: _savedImageId!,
+          inputImageDate: DateTime.now(),
+          executionTimestamp: result.executedAt,
+          prediction: result.prediction,
+          confidence: result.confidence,
+          scores: {
+            'glioma': result.gliomaScore,
+            'meningioma': result.meningiomaScore,
+            'notumor': result.noTumorScore,
+            'pituitary': result.pituitaryScore,
+          },
+        );
+      } else {
+        final result = _inferenceResult!;
+        await _runRepo.saveSuccessfulRun(
+          runId: _uuid.v4(),
+          resultId: _uuid.v4(),
+          findingId: _uuid.v4(),
+          examinationId: _draftExaminationId!,
+          modelId: modelId,
+          modelVersionId: versionId,
+          inputImageId: _savedImageId!,
+          inputImageDate: DateTime.now(),
+          executionTimestamp: result.executedAt,
+          prediction: result.prediction,
+          confidence: result.confidence,
+          normalProbability: result.normalProbability,
+          pneumoniaProbability: result.pneumoniaProbability,
+        );
+      }
 
       // Update examination with notes and status.
       final notes = _notesController.text.trim();
@@ -343,13 +441,14 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     return result ?? false;
   }
 
+  // ── Build ──
+
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
         if (_examinationSaved) {
           Navigator.of(context).pop(true);
           return;
@@ -416,32 +515,54 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                           _buildPageHeader(),
                           const SizedBox(height: 36),
 
-                          // Stage A: Examination Setup
-                          _buildStageA(),
-                          const SizedBox(height: 20),
-
-                          // Stage B: AI Analysis
-                          _buildStageB(),
-
-                          // Stage C: AI Results (only if completed)
-                          if (_inferenceCompleted && _inferenceResult != null)
-                            ...[
+                          // Specialty selection or examination workflow
+                          if (_selectedSpecialty == null) ...[
+                            _buildSpecialtySelection(),
+                          ] else ...[
+                            _buildStageA(),
+                            // Show unsupported specialty notice (e.g. Ophthalmology)
+                            if (_activeModelId == null) ...[
+                              const SizedBox(height: 20),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: WisteriaColors.surfaceContainer,
+                                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
+                                  border: Border.all(color: WisteriaColors.border),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded, size: 20, color: WisteriaColors.textMuted),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'No AI model is currently available for $_selectedSpecialty. '
+                                        'This specialty will be supported in a future update.',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: WisteriaColors.textSecondary,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else ...[
+                            const SizedBox(height: 20),
+                            _buildStageB(),
+                            if (_inferenceCompleted && (_inferenceResult != null || _brainTumorResult != null)) ...[
                               const SizedBox(height: 20),
                               _buildStageC(),
                             ],
-
-                          // Stage D: Doctor Notes (only after inference)
-                          if (_inferenceCompleted) ...[
-                            const SizedBox(height: 20),
-                            _buildStageD(),
+                            if (_inferenceCompleted) ...[
+                              const SizedBox(height: 20),
+                              _buildStageD(),
+                              const SizedBox(height: 20),
+                              _buildStageE(),
+                            ],
+                            ],
                           ],
-
-                          // Stage E: Save (only after inference)
-                          if (_inferenceCompleted) ...[
-                            const SizedBox(height: 20),
-                            _buildStageE(),
-                          ],
-
                           const SizedBox(height: 48),
                         ],
                       ),
@@ -455,6 +576,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       ),
     );
   }
+
+  // ── Page Header ──
 
   Widget _buildPageHeader() {
     return Row(
@@ -507,6 +630,124 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
+  // ── Stage 0: Specialty Selection ──
+
+  Widget _buildSpecialtySelection() {
+    const specialties = [
+      _SpecialtyInfo(
+        name: 'Cardiology',
+        subtitle: 'Heart & Cardiovascular',
+        icon: Icons.favorite_rounded,
+        color: Color(0xFFE53935),
+      ),
+      _SpecialtyInfo(
+        name: 'Neurology',
+        subtitle: 'Brain & Nervous System',
+        icon: Icons.psychology_rounded,
+        color: Color(0xFF8E24AA),
+      ),
+      _SpecialtyInfo(
+        name: 'Ophthalmology',
+        subtitle: 'Eye & Vision',
+        icon: Icons.visibility_rounded,
+        color: Color(0xFF039BE5),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Select Medical Specialty',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: WisteriaColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Choose the clinical area for this examination to load the appropriate AI model.',
+          style: TextStyle(
+            fontSize: 13,
+            color: WisteriaColors.textMuted,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 24),
+        ...specialties.map((s) => _buildSpecialtyCard(s)),
+      ],
+    );
+  }
+
+  Widget _buildSpecialtyCard(_SpecialtyInfo info) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(WisteriaRadius.lg),
+        onTap: () {
+          setState(() {
+            _selectedSpecialty = info.name;
+          });
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: WisteriaColors.surfaceLow,
+            borderRadius: BorderRadius.circular(WisteriaRadius.lg),
+            border: Border.all(color: WisteriaColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: info.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
+                ),
+                child: Icon(
+                  info.icon,
+                  color: info.color,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      info.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: WisteriaColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      info.subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: WisteriaColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: WisteriaColors.textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Stage A: Examination Setup ──
 
   Widget _buildStageA() {
@@ -515,6 +756,48 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       title: 'Examination Setup',
       icon: Icons.assignment_outlined,
       children: [
+        // Selected specialty chip
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: WisteriaColors.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(WisteriaRadius.full),
+                border: Border.all(
+                  color: WisteriaColors.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Text(
+                _selectedSpecialty ?? '',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: WisteriaColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              onTap: _inferenceCompleted
+                  ? null
+                  : () => setState(() => _selectedSpecialty = null),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Text(
+                  'Change',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: WisteriaColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
         // Patient info
         _buildInfoRow('Patient', widget.patientName),
         _buildInfoRow('Patient ID', widget.patientId),
@@ -670,7 +953,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             child: Image.file(
               _selectedImageFile!,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const Icon(
+              errorBuilder: (ctx, err, stack) => const Icon(
                 Icons.broken_image_outlined,
                 color: WisteriaColors.textMuted,
               ),
@@ -750,75 +1033,87 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         else if (_modelError != null)
           _buildErrorCard(_modelError!)
         else ...[
-          // Model card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: WisteriaColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: Border.all(color: WisteriaColors.border),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: WisteriaColors.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  ),
-                  child: const Icon(
-                    Icons.memory_rounded,
-                    size: 20,
-                    color: WisteriaColors.primary,
-                  ),
+          // Model card — dynamic based on specialty
+          Builder(
+            builder: (_) {
+              final catalog = _activeModelId != null
+                  ? SystemModelCatalog.getById(_activeModelId!)
+                  : null;
+              final modelName = catalog?.displayName ?? 'Pneumonia ResNet18';
+              final modelMeta = catalog != null
+                  ? '${catalog.task} · ${catalog.modality} · ${catalog.runtime} · v${catalog.version}'
+                  : 'Pneumonia Classification · X-Ray · ONNX Runtime · v1.0.0';
+
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: WisteriaColors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  border: Border.all(color: WisteriaColors.border),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pneumonia ResNet18',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: WisteriaColors.textPrimary,
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: WisteriaColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Pneumonia Classification · X-Ray · ONNX Runtime · v1.0.0',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: WisteriaColors.textMuted,
-                        ),
+                      child: const Icon(
+                        Icons.memory_rounded,
+                        size: 20,
+                        color: WisteriaColors.primary,
                       ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: WisteriaColors.success.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'LOCAL',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: WisteriaColors.success,
-                      letterSpacing: 0.5,
                     ),
-                  ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            modelName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: WisteriaColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            modelMeta,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: WisteriaColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: WisteriaColors.success.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'LOCAL',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: WisteriaColors.success,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           const SizedBox(height: 16),
@@ -884,7 +1179,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                       ? 'Running AI analysis...'
                       : _selectedImageFile == null
                           ? 'Select an image first'
-                          : 'Run AI Analysis',
+                          : 'Run $_activeModelDisplayName',
                 ),
               ),
             ),
@@ -901,7 +1196,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             const SizedBox(height: 12),
             _buildErrorCard(_inferenceError!),
             const SizedBox(height: 12),
-            // Retry button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -950,7 +1244,14 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   // ── Stage C: AI Results ──
 
   Widget _buildStageC() {
-    final result = _inferenceResult!;
+    // Determine if we have a brain tumor result or pneumonia result
+    if (_brainTumorResult != null) {
+      return _buildStageCBrainTumor(_brainTumorResult!);
+    }
+    return _buildStageCPneumonia(_inferenceResult!);
+  }
+
+  Widget _buildStageCPneumonia(PneumoniaInferenceResult result) {
     final isPneumonia = result.prediction == 'PNEUMONIA';
 
     return _buildSection(
@@ -1027,10 +1328,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         const SizedBox(height: 16),
 
         // Detailed results
-        _buildResultRow(
-          'Predicted Class',
-          result.prediction,
-        ),
+        _buildResultRow('Predicted Class', result.prediction),
         _buildResultRow(
           'Model Confidence',
           '${(result.confidence * 100).toStringAsFixed(2)}%',
@@ -1043,46 +1341,142 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           'PNEUMONIA Probability',
           '${(result.pneumoniaProbability * 100).toStringAsFixed(2)}%',
         ),
-        _buildResultRow(
-          'Model',
-          'Pneumonia ResNet18 v1.0.0',
-        ),
-        _buildResultRow(
-          'Execution Time',
-          _formatDateTime(result.executedAt),
-        ),
+        _buildResultRow('Model', 'Pneumonia ResNet18 v1.0.0'),
+        _buildResultRow('Execution Time', _formatDateTime(result.executedAt)),
 
         const SizedBox(height: 12),
+        _buildAILabel(),
+      ],
+    );
+  }
 
-        // AI label
+  Widget _buildStageCBrainTumor(BrainTumorInferenceResult result) {
+    final isNoTumor = result.prediction == 'notumor';
+    final displayName = BrainTumorInferenceService
+        .classDisplayNames[BrainTumorInferenceService.classLabels.indexOf(result.prediction)];
+    final alertColor = isNoTumor ? WisteriaColors.success : WisteriaColors.warning;
+
+    return _buildSection(
+      number: '3',
+      title: 'AI Classification Result',
+      icon: Icons.analytics_outlined,
+      children: [
+        // Prediction header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: WisteriaColors.surfaceContainer,
-            borderRadius: BorderRadius.circular(WisteriaRadius.full),
-            border: Border.all(color: WisteriaColors.border),
+            color: alertColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(WisteriaRadius.md),
+            border: Border.all(
+              color: alertColor.withValues(alpha: 0.2),
+            ),
           ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              Icon(
-                Icons.auto_awesome_outlined,
-                size: 14,
-                color: WisteriaColors.primary,
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: alertColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
+                ),
+                child: Icon(
+                  isNoTumor
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.warning_amber_rounded,
+                  color: alertColor,
+                  size: 28,
+                ),
               ),
-              SizedBox(width: 6),
-              Text(
-                'AI-generated classification result',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: WisteriaColors.textMuted,
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: alertColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Confidence: ${(result.confidence * 100).toStringAsFixed(2)}%',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: WisteriaColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
+
+        const SizedBox(height: 16),
+
+        // Detailed results
+        _buildResultRow('Predicted Class', displayName),
+        _buildResultRow(
+          'Model Confidence',
+          '${(result.confidence * 100).toStringAsFixed(2)}%',
+        ),
+        _buildResultRow(
+          'Glioma Probability',
+          '${(result.gliomaScore * 100).toStringAsFixed(2)}%',
+        ),
+        _buildResultRow(
+          'Meningioma Probability',
+          '${(result.meningiomaScore * 100).toStringAsFixed(2)}%',
+        ),
+        _buildResultRow(
+          'No Tumor Probability',
+          '${(result.noTumorScore * 100).toStringAsFixed(2)}%',
+        ),
+        _buildResultRow(
+          'Pituitary Probability',
+          '${(result.pituitaryScore * 100).toStringAsFixed(2)}%',
+        ),
+        _buildResultRow('Model', 'Brain Tumor ResNet18 v1.0.0'),
+        _buildResultRow('Execution Time', _formatDateTime(result.executedAt)),
+
+        const SizedBox(height: 12),
+        _buildAILabel(),
       ],
+    );
+  }
+
+  Widget _buildAILabel() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: WisteriaColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(WisteriaRadius.full),
+        border: Border.all(color: WisteriaColors.border),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.auto_awesome_outlined,
+            size: 14,
+            color: WisteriaColors.primary,
+          ),
+          SizedBox(width: 6),
+          Text(
+            'AI-generated classification result',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: WisteriaColors.textMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1108,8 +1502,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           maxLines: 6,
           style: const TextStyle(color: WisteriaColors.textPrimary),
           decoration: const InputDecoration(
-            hintText:
-                'Clinical observations, assessment, and plan...',
+            hintText: 'Clinical observations, assessment, and plan...',
             border: OutlineInputBorder(),
             alignLabelWithHint: true,
           ),
@@ -1344,4 +1737,32 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$day/$month/$year · $hour:$minute $period';
   }
+}
+
+// ── Data classes ──
+
+class _InstalledModelChoice {
+  final MedicalModel model;
+  final ModelVersion version;
+  final CatalogModel catalog;
+
+  const _InstalledModelChoice({
+    required this.model,
+    required this.version,
+    required this.catalog,
+  });
+}
+
+class _SpecialtyInfo {
+  final String name;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  const _SpecialtyInfo({
+    required this.name,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
 }

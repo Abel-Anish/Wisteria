@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:wisteria/core/database/database.dart';
 import 'package:wisteria/core/database/repositories/medical_model_repository.dart';
+import 'package:wisteria/core/models/system_model_catalog.dart';
 import 'package:wisteria/core/services/model_registry_service.dart';
+import 'package:wisteria/core/services/onnx_inference_service.dart';
 import 'package:wisteria/core/theme/wisteria_theme.dart';
 import 'package:wisteria/features/doctor/doctor_profile_page.dart';
 import 'package:wisteria/features/models/medical_model_page.dart';
@@ -405,6 +407,7 @@ void main() {
       models = await repo.getAllModels();
       expect(models.any((m) => m.name.toLowerCase() == 'john'), isFalse);
       expect(models.any((m) => m.name == 'Pneumonia ResNet18'), isTrue);
+      expect(models.any((m) => m.name == 'Brain Tumor ResNet18'), isTrue);
 
       // Repeat sync to verify idempotency (no duplicates created)
       await service.synchronizeCatalog();
@@ -413,10 +416,75 @@ void main() {
         models.where((m) => m.id == 'wisteria-pneumonia-resnet18').length,
         equals(1),
       );
+      expect(
+        models.where((m) => m.id == 'wisteria-brain-tumor-resnet18').length,
+        equals(1),
+      );
 
       await db.close();
     },
   );
+
+  // ── Brain Tumor catalog tests ──────────────────────────────────────────────
+
+  test('SystemModelCatalog contains exactly 2 catalog models', () {
+    expect(SystemModelCatalog.allModels.length, equals(2));
+  });
+
+  test('Brain Tumor catalog entry has correct metadata', () {
+    final bt = SystemModelCatalog.brainTumorResNet18;
+    expect(bt.id, equals('wisteria-brain-tumor-resnet18'));
+    expect(bt.modality, equals('MRI'));
+    expect(bt.task, equals('Brain Tumor Classification'));
+    expect(bt.assetPath, equals('assets/models/brain_tumor_resnet18.onnx'));
+    expect(bt.outputClasses.length, equals(4));
+    expect(bt.outputClasses[0], equals('glioma'));
+    expect(bt.outputClasses[1], equals('meningioma'));
+    expect(bt.outputClasses[2], equals('notumor'));
+    expect(bt.outputClasses[3], equals('pituitary'));
+    expect(bt.isSupported, isTrue);
+  });
+
+  test('BrainTumorInferenceService class labels match notebook contract', () {
+    // Class order must exactly match PyTorch ImageFolder alphabetical ordering
+    // as confirmed by notebook output:
+    //   Class mapping: {'glioma': 0, 'meningioma': 1, 'notumor': 2, 'pituitary': 3}
+    expect(BrainTumorInferenceService.classLabels.length, equals(4));
+    expect(BrainTumorInferenceService.classLabels[0], equals('glioma'));
+    expect(BrainTumorInferenceService.classLabels[1], equals('meningioma'));
+    expect(BrainTumorInferenceService.classLabels[2], equals('notumor'));
+    expect(BrainTumorInferenceService.classLabels[3], equals('pituitary'));
+  });
+
+  test('BrainTumorInferenceService normalization constants match notebook', () {
+    // ImageNet normalization used in both train and test_transform in notebook.
+    expect(BrainTumorInferenceService.mean[0], closeTo(0.485, 1e-6));
+    expect(BrainTumorInferenceService.mean[1], closeTo(0.456, 1e-6));
+    expect(BrainTumorInferenceService.mean[2], closeTo(0.406, 1e-6));
+    expect(BrainTumorInferenceService.std[0], closeTo(0.229, 1e-6));
+    expect(BrainTumorInferenceService.std[1], closeTo(0.224, 1e-6));
+    expect(BrainTumorInferenceService.std[2], closeTo(0.225, 1e-6));
+    expect(BrainTumorInferenceService.inputSize, equals(224));
+  });
+
+  test('BrainTumorInferenceService model asset path matches pubspec declaration', () {
+    expect(
+      BrainTumorInferenceService.modelAsset,
+      equals('assets/models/brain_tumor_resnet18.onnx'),
+    );
+  });
+
+  test('OnnxInferenceService (Pneumonia) constants remain unchanged', () {
+    expect(OnnxInferenceService.modelAsset,
+        equals('assets/models/pneumonia_resnet18.onnx'));
+    expect(OnnxInferenceService.inputSize, equals(224));
+    expect(OnnxInferenceService.mean[0], closeTo(0.485, 1e-6));
+    expect(OnnxInferenceService.mean[1], closeTo(0.456, 1e-6));
+    expect(OnnxInferenceService.mean[2], closeTo(0.406, 1e-6));
+    expect(OnnxInferenceService.std[0], closeTo(0.229, 1e-6));
+    expect(OnnxInferenceService.std[1], closeTo(0.224, 1e-6));
+    expect(OnnxInferenceService.std[2], closeTo(0.225, 1e-6));
+  });
 
   testWidgets(
     'MedicalModelPage renders auto-registered models without Register model button',
@@ -444,8 +512,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('1 recognized model'), findsOneWidget);
+      // 2 models are now registered: Pneumonia + Brain Tumor
+      expect(find.text('2 recognized models'), findsOneWidget);
       expect(find.text('Pneumonia ResNet18'), findsOneWidget);
+      expect(find.text('Brain Tumor ResNet18'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Register model'), findsNothing);
 
       await db.close();
