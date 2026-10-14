@@ -72,6 +72,7 @@ flutter:
   assets:
     - assets/wisteria_banner.png
     - assets/models/pneumonia_resnet18.onnx
+    - assets/models/brain_tumor_resnet18.onnx
     - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see

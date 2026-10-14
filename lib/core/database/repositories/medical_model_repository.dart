@@ -96,8 +96,12 @@ class MedicalModelRepository {
   static const String bundledModelId = 'wisteria-pneumonia-resnet18';
   static const String bundledVersionId = 'wisteria-pneumonia-resnet18-v1';
 
+  static const String brainTumorModelId = 'wisteria-brain-tumor-resnet18';
+  static const String brainTumorVersionId = 'wisteria-brain-tumor-resnet18-v1';
+
   Future<({String modelId, String versionId})> ensureBundledPneumoniaModel() async {
     await ModelRegistryService(database).synchronizeCatalog();
     return (modelId: bundledModelId, versionId: bundledVersionId);
   }
 }
+

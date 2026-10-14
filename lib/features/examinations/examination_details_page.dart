@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,7 +11,46 @@ import '../../core/theme/wisteria_theme.dart';
 import '../shared/wisteria_back_button.dart';
 import '../../core/database/repositories/medical_model_repository.dart';
 import '../../core/database/repositories/model_run_repository.dart';
+import '../../core/models/system_model_catalog.dart';
 import '../../core/services/onnx_inference_service.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Allowed modality for each model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns `null` when the image modality is compatible with the model.
+/// Returns a human-readable error string when incompatible.
+String? _validateModality({
+  required String imageModality,
+  required String modelModality,
+  required String modelDisplayName,
+}) {
+  final img = imageModality.trim().toLowerCase();
+  final mod = modelModality.trim().toLowerCase();
+
+  // Exact match is always valid.
+  if (img == mod) return null;
+
+  // Pneumonia model accepts X-Ray only.
+  if (mod == 'x-ray' && img != 'x-ray') {
+    return 'The $modelDisplayName model requires a chest X-Ray image, '
+        'but the selected image has modality "$imageModality". '
+        'Please select an X-Ray image.';
+  }
+
+  // Brain Tumor model accepts MRI only.
+  if (mod == 'mri' && img != 'mri') {
+    return 'The $modelDisplayName model requires a brain MRI image, '
+        'but the selected image has modality "$imageModality". '
+        'Please select an MRI image.';
+  }
+
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page widget
+// ─────────────────────────────────────────────────────────────────────────────
 
 class ExaminationDetailsPage extends StatefulWidget {
   final WisteriaDatabase database;
@@ -46,6 +86,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
   List<MedicalImage> _medicalImages = [];
   bool _isLoading = true;
   bool _isAddingImage = false;
+
   @override
   void initState() {
     super.initState();
@@ -164,14 +205,17 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
 
         if (version == null) continue;
 
-        // This production cycle supports the bundled pneumonia model only.
-        final registeredPath = version.filePath.trim().replaceAll(r'\', '/');
+        // Only include models that are in the catalog and supported.
+        final catalogEntry = SystemModelCatalog.getById(model.id);
+        if (catalogEntry == null || !catalogEntry.isSupported) continue;
 
-        if (registeredPath != OnnxInferenceService.modelAsset) {
-          continue;
-        }
-
-        choices.add(_InstalledModelChoice(model: model, version: version));
+        choices.add(
+          _InstalledModelChoice(
+            model: model,
+            version: version,
+            catalog: catalogEntry,
+          ),
+        );
       }
 
       final runs = await _modelRunRepository.getRunsForExamination(
@@ -207,6 +251,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         _installedModels = choices;
         _savedInferences = saved;
 
+        // If the selected model was removed from the registry, clear it.
         if (_selectedModelVersionId != null &&
             !choices.any(
               (choice) => choice.version.id == _selectedModelVersionId,
@@ -226,18 +271,29 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
     }
   }
 
+  // ── Inference ──────────────────────────────────────────────────────────────
+
+  /// Returns the currently selected model choice, or null if none is selected.
+  _InstalledModelChoice? get _selectedChoice {
+    if (_selectedModelVersionId == null) return null;
+    for (final c in _installedModels) {
+      if (c.version.id == _selectedModelVersionId) return c;
+    }
+    return null;
+  }
+
   Future<void> _runInference() async {
     if (_selectedImageId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a medical image first')),
+        const SnackBar(content: Text('Please select a medical image first.')),
       );
       return;
     }
 
-    final choice = _installedModels.isNotEmpty ? _installedModels.first : null;
+    final choice = _selectedChoice;
     if (choice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No installed model available')),
+        const SnackBar(content: Text('Please select a model first.')),
       );
       return;
     }
@@ -246,44 +302,44 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       (img) => img.id == _selectedImageId,
     );
 
+    // Modality validation
+    final modalityError = _validateModality(
+      imageModality: image.modality,
+      modelModality: choice.catalog.modality,
+      modelDisplayName: choice.model.name,
+    );
+    if (modalityError != null) {
+      setState(() {
+        _inferenceError = modalityError;
+      });
+      return;
+    }
+
     setState(() {
       _isRunningInference = true;
       _inferenceError = null;
     });
 
     try {
-      final service = OnnxInferenceService.instance;
-      await service.initialize();
+      final modelId = choice.model.id;
 
-      final result = await service.analyzeImage(File(image.filePath));
-
-      // Save to database
-      final runId = const Uuid().v4();
-      final resultId = const Uuid().v4();
-      final findingId = const Uuid().v4();
-
-      await _modelRunRepository.saveSuccessfulRun(
-        runId: runId,
-        resultId: resultId,
-        findingId: findingId,
-        examinationId: widget.examinationId,
-        modelId: choice.model.id,
-        modelVersionId: choice.version.id,
-        inputImageId: image.id,
-        inputImageDate: image.clinicalDate,
-        executionTimestamp: result.executedAt,
-        prediction: result.prediction,
-        confidence: result.confidence,
-        normalProbability: result.normalProbability,
-        pneumoniaProbability: result.pneumoniaProbability,
-      );
+      if (modelId == MedicalModelRepository.bundledModelId) {
+        await _runPneumoniaInference(image, choice);
+      } else if (modelId == MedicalModelRepository.brainTumorModelId) {
+        await _runBrainTumorInference(image, choice);
+      } else {
+        throw UnsupportedError(
+          'No inference implementation for model "$modelId". '
+          'This model is registered but not yet supported by the inference pipeline.',
+        );
+      }
 
       await _loadInferenceData();
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inference completed and saved')),
+        const SnackBar(content: Text('Inference completed and saved.')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -298,6 +354,72 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       }
     }
   }
+
+  Future<void> _runPneumoniaInference(
+    MedicalImage image,
+    _InstalledModelChoice choice,
+  ) async {
+    final service = OnnxInferenceService.instance;
+    await service.initialize();
+
+    final result = await service.analyzeImage(File(image.filePath));
+
+    final runId = const Uuid().v4();
+    final resultId = const Uuid().v4();
+    final findingId = const Uuid().v4();
+
+    await _modelRunRepository.saveSuccessfulRun(
+      runId: runId,
+      resultId: resultId,
+      findingId: findingId,
+      examinationId: widget.examinationId,
+      modelId: choice.model.id,
+      modelVersionId: choice.version.id,
+      inputImageId: image.id,
+      inputImageDate: image.clinicalDate,
+      executionTimestamp: result.executedAt,
+      prediction: result.prediction,
+      confidence: result.confidence,
+      normalProbability: result.normalProbability,
+      pneumoniaProbability: result.pneumoniaProbability,
+    );
+  }
+
+  Future<void> _runBrainTumorInference(
+    MedicalImage image,
+    _InstalledModelChoice choice,
+  ) async {
+    final service = BrainTumorInferenceService.instance;
+    await service.initialize();
+
+    final result = await service.analyzeImage(File(image.filePath));
+
+    final runId = const Uuid().v4();
+    final resultId = const Uuid().v4();
+    final findingId = const Uuid().v4();
+
+    await _modelRunRepository.saveSuccessfulBrainTumorRun(
+      runId: runId,
+      resultId: resultId,
+      findingId: findingId,
+      examinationId: widget.examinationId,
+      modelId: choice.model.id,
+      modelVersionId: choice.version.id,
+      inputImageId: image.id,
+      inputImageDate: image.clinicalDate,
+      executionTimestamp: result.executedAt,
+      prediction: result.prediction,
+      confidence: result.confidence,
+      scores: {
+        'glioma': result.gliomaScore,
+        'meningioma': result.meningiomaScore,
+        'notumor': result.noTumorScore,
+        'pituitary': result.pituitaryScore,
+      },
+    );
+  }
+
+  // ── Image management ───────────────────────────────────────────────────────
 
   Future<void> _deleteMedicalImage(MedicalImage image) async {
     final confirmed = await showDialog<bool>(
@@ -371,6 +493,8 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       lastDate: DateTime.now(),
     );
   }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -592,6 +716,8 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
     );
   }
 
+  // ── AI Inference Section ───────────────────────────────────────────────────
+
   Widget _buildAIInferenceSection() {
     return _buildSection(
       title: 'AI Analysis',
@@ -652,7 +778,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             ),
             const SizedBox(height: 12),
 
-            // Image selector
+            // ── Image selector ──
             InputDecorator(
               decoration: const InputDecoration(
                 labelText: 'Select Image',
@@ -688,74 +814,57 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
 
             const SizedBox(height: 12),
 
-            // Model info
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: WisteriaColors.surfaceContainer,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                border: Border.all(color: WisteriaColors.border),
+            // ── Model selector ──
+            InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Select Model',
+                border: OutlineInputBorder(),
               ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.memory_rounded,
-                    size: 18,
-                    color: WisteriaColors.primary,
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedModelVersionId,
+                  isExpanded: true,
+                  isDense: true,
+                  dropdownColor: WisteriaColors.surfaceContainer,
+                  hint: const Text(
+                    'Choose a model',
+                    style: TextStyle(color: WisteriaColors.textMuted),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _installedModels.first.model.name,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: WisteriaColors.textPrimary,
+                  items: _installedModels
+                      .map(
+                        (choice) => DropdownMenuItem(
+                          value: choice.version.id,
+                          child: Text(
+                            '${choice.model.name} — ${choice.catalog.modality} • v${choice.version.version}',
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${_installedModels.first.model.task} • ${_installedModels.first.model.modality} • v${_installedModels.first.version.version}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: WisteriaColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: WisteriaColors.success.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'LOCAL',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: WisteriaColors.success,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ],
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedModelVersionId = value;
+                      _inferenceError = null;
+                    });
+                  },
+                ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Run button
+            // ── Selected model info card ──
+            if (_selectedChoice != null) ...[
+              _buildModelInfoCard(_selectedChoice!),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Run button ──
             FilledButton.icon(
-              onPressed: _isRunningInference || _selectedImageId == null
+              onPressed:
+                  _isRunningInference ||
+                      _selectedImageId == null ||
+                      _selectedModelVersionId == null
                   ? null
                   : _runInference,
               icon: _isRunningInference
@@ -771,7 +880,9 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               label: Text(
                 _isRunningInference
                     ? 'Running inference...'
-                    : 'Run Pneumonia Classification',
+                    : _selectedChoice != null
+                    ? 'Run ${_selectedChoice!.model.name}'
+                    : 'Run Inference',
               ),
             ),
 
@@ -839,7 +950,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Register the pneumonia model in Doctor & System → Models to enable AI inference.',
+                    'Register a model in Doctor & System → Models to enable AI inference.',
                     style: TextStyle(
                       fontSize: 12,
                       color: WisteriaColors.textMuted,
@@ -870,6 +981,70 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
     );
   }
 
+  Widget _buildModelInfoCard(_InstalledModelChoice choice) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: WisteriaColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: WisteriaColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.memory_rounded,
+            size: 18,
+            color: WisteriaColors.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  choice.model.name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: WisteriaColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${choice.model.task} • ${choice.catalog.modality} • v${choice.version.version}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: WisteriaColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: WisteriaColors.success.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'LOCAL',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: WisteriaColors.success,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSavedInferenceCard(_SavedInference inference) {
     final finding = inference.findings.isNotEmpty
         ? inference.findings.first
@@ -880,7 +1055,23 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         ? double.tryParse(finding!.confidence!)
         : null;
 
+    // Decode raw model output for additional scores
+    Map<String, dynamic>? rawOutput;
+    try {
+      final raw = inference.result.rawModelOutput;
+      if (raw != null && raw.isNotEmpty) {
+        rawOutput = jsonDecode(raw) as Map<String, dynamic>?;
+      }
+    } catch (_) {
+      // Ignore decode errors; display only the primary finding.
+    }
+
+    final isBrainTumor = rawOutput?['modelType'] == 'brain_tumor';
+
+    // Severity determination for icon/color
     final isPneumonia = prediction.toUpperCase() == 'PNEUMONIA';
+    final isNoTumor = prediction.toLowerCase() == 'notumor';
+    final isAlertCondition = isPneumonia || (!isNoTumor && isBrainTumor);
 
     return Container(
       width: double.infinity,
@@ -900,16 +1091,16 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isPneumonia
+                  color: isAlertCondition
                       ? WisteriaColors.warning.withValues(alpha: 0.10)
                       : WisteriaColors.success.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                 ),
                 child: Icon(
-                  isPneumonia
+                  isAlertCondition
                       ? Icons.warning_amber_rounded
                       : Icons.check_circle_outline_rounded,
-                  color: isPneumonia
+                  color: isAlertCondition
                       ? WisteriaColors.warning
                       : WisteriaColors.success,
                   size: 22,
@@ -921,11 +1112,11 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      prediction,
+                      _formatPredictionLabel(prediction, isBrainTumor),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isPneumonia
+                        color: isAlertCondition
                             ? WisteriaColors.warning
                             : WisteriaColors.success,
                       ),
@@ -962,6 +1153,47 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                 ),
             ],
           ),
+
+          // ── Brain Tumor score breakdown ──
+          if (isBrainTumor && rawOutput != null) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            const Text(
+              'Class scores',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: WisteriaColors.textMuted,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildScoreRow('Glioma', rawOutput['glioma']),
+            _buildScoreRow('Meningioma', rawOutput['meningioma']),
+            _buildScoreRow('No Tumor', rawOutput['notumor']),
+            _buildScoreRow('Pituitary', rawOutput['pituitary']),
+          ],
+
+          // ── Pneumonia score breakdown ──
+          if (!isBrainTumor && rawOutput != null) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            const Text(
+              'Class scores',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: WisteriaColors.textMuted,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildScoreRow('Normal', rawOutput['normalProbability']),
+            _buildScoreRow('Pneumonia', rawOutput['pneumoniaProbability']),
+          ],
+
           const SizedBox(height: 12),
           Text(
             _formatDateTime(inference.run.executionTimestamp),
@@ -973,6 +1205,56 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildScoreRow(String label, dynamic rawValue) {
+    final value = rawValue is num ? rawValue.toDouble() : null;
+    final text = value != null
+        ? '${(value * 100).toStringAsFixed(2)}%'
+        : '—';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: WisteriaColors.textSecondary,
+              ),
+            ),
+          ),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: WisteriaColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPredictionLabel(String prediction, bool isBrainTumor) {
+    if (!isBrainTumor) return prediction;
+
+    switch (prediction.toLowerCase()) {
+      case 'glioma':
+        return 'Glioma';
+      case 'meningioma':
+        return 'Meningioma';
+      case 'notumor':
+        return 'No Tumor';
+      case 'pituitary':
+        return 'Pituitary';
+      default:
+        return prediction;
+    }
   }
 
   Widget _buildSection({
@@ -1136,8 +1418,13 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
 class _InstalledModelChoice {
   final MedicalModel model;
   final ModelVersion version;
+  final CatalogModel catalog;
 
-  const _InstalledModelChoice({required this.model, required this.version});
+  const _InstalledModelChoice({
+    required this.model,
+    required this.version,
+    required this.catalog,
+  });
 }
 
 class _SavedInference {
