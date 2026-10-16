@@ -12,6 +12,8 @@ import 'package:wisteria/features/doctor/doctor_profile_page.dart';
 import 'package:wisteria/features/models/medical_model_page.dart';
 import 'package:wisteria/features/workspace/main_workspace_panel.dart';
 import 'package:wisteria/features/workspace/system_workspace_panel.dart';
+import 'package:wisteria/features/examinations/create_examination_page.dart';
+import 'package:wisteria/features/examinations/examination_details_page.dart';
 import 'package:wisteria/features/patients/new_patient_registration_page.dart';
 import 'package:wisteria/features/patients/patient_page.dart';
 import 'package:wisteria/features/patients/widgets/patient_age_avatar.dart';
@@ -517,6 +519,154 @@ void main() {
       expect(find.text('Pneumonia ResNet18'), findsOneWidget);
       expect(find.text('Brain Tumor ResNet18'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Register model'), findsNothing);
+
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'CreateExaminationPage has no dropdowns in Examination Setup and supports both pneumonia and brain tumor detection',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final service = ModelRegistryService(db);
+      await service.synchronizeCatalog();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.dark),
+          home: CreateExaminationPage(
+            database: db,
+            patientId: 'patient-test-123',
+            patientName: 'Test Patient',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Stage 0: Specialty selection should show Cardiology and Neurology
+      expect(find.text('Select Medical Specialty'), findsOneWidget);
+      expect(find.text('Cardiology'), findsOneWidget);
+      expect(find.text('Neurology'), findsOneWidget);
+
+      // Select Cardiology (Pneumonia)
+      await tester.tap(find.text('Cardiology'));
+      await tester.pumpAndSettle();
+
+      // Check Examination Setup
+      expect(find.text('Examination Setup'), findsOneWidget);
+      expect(find.text('Test Patient'), findsOneWidget);
+      expect(find.text('patient-test-123'), findsOneWidget);
+
+      // Verify dropdowns are completely removed
+      expect(find.text('Examination Type'), findsNothing);
+      expect(find.text('Previous Data Context'), findsNothing);
+      expect(find.byType(DropdownButton<String>), findsNothing);
+
+      // Verify image addition is present
+      expect(find.text('Medical Image'), findsOneWidget);
+      expect(find.text('Click to select a chest X-ray image'), findsOneWidget);
+
+      // Verify AI Analysis section is present with Pneumonia model
+      expect(find.text('AI Analysis'), findsOneWidget);
+      expect(find.text('Pneumonia ResNet18'), findsOneWidget);
+
+      // Now switch specialty to Neurology (Brain Tumor)
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select Medical Specialty'), findsOneWidget);
+      await tester.tap(find.text('Neurology'));
+      await tester.pumpAndSettle();
+
+      // Check Examination Setup for Brain Tumor
+      expect(find.text('Examination Setup'), findsOneWidget);
+      expect(find.text('Examination Type'), findsNothing);
+      expect(find.text('Previous Data Context'), findsNothing);
+      expect(find.byType(DropdownButton<String>), findsNothing);
+
+      // Verify image addition is present for Brain MRI
+      expect(find.text('Medical Image'), findsOneWidget);
+      expect(find.text('Click to select a brain MRI image'), findsOneWidget);
+
+      // Verify AI Analysis section is present with Brain Tumor model
+      expect(find.text('Brain Tumor ResNet18'), findsOneWidget);
+
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'ExaminationDetailsPage has no dropdown selection lists in AI Analysis section',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final service = ModelRegistryService(db);
+      await service.synchronizeCatalog();
+
+      // Create test patient
+      await db.into(db.patients).insert(
+            PatientsCompanion.insert(
+              id: 'patient-456',
+              name: 'Jane Doe',
+            ),
+          );
+
+      // Create test examination
+      await db.into(db.examinations).insert(
+            ExaminationsCompanion.insert(
+              id: 'exam-456',
+              patientId: 'patient-456',
+              examinationType: 'MRI',
+              examinationDate: DateTime.now(),
+              previousDataRange: '6 Months',
+              status: 'COMPLETED',
+            ),
+          );
+
+      // Create test medical image
+      await db.into(db.medicalImages).insert(
+            MedicalImagesCompanion.insert(
+              id: 'img-456',
+              examinationId: 'exam-456',
+              filePath: 'test/path/img.jpg',
+              originalFileName: 'brain_scan.jpg',
+              fileFormat: 'jpg',
+              modality: 'MRI',
+              clinicalDate: DateTime.now(),
+            ),
+          );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.dark),
+          home: ExaminationDetailsPage(
+            database: db,
+            examinationId: 'exam-456',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify AI Analysis section is present
+      expect(find.text('AI Analysis'), findsOneWidget);
+
+      // Verify dropdowns (Select Image, Select Model) are completely removed
+      expect(find.text('Select Image'), findsNothing);
+      expect(find.text('Select Model'), findsNothing);
+      expect(find.text('Choose a model'), findsNothing);
+      expect(find.text('Choose an image'), findsNothing);
+      expect(find.byType(DropdownButton<String>), findsNothing);
+
+      // Verify model info card and Run button are present directly
+      expect(find.text('Brain Tumor ResNet18'), findsWidgets);
+      expect(find.text('Run Brain Tumor ResNet18'), findsOneWidget);
 
       await db.close();
     },
