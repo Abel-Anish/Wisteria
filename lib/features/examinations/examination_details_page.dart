@@ -123,6 +123,9 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
 
     setState(() {
       _medicalImages = images;
+      if (_selectedImageId == null && images.isNotEmpty) {
+        _selectedImageId = images.first.id;
+      }
     });
   }
 
@@ -251,12 +254,29 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         _installedModels = choices;
         _savedInferences = saved;
 
-        // If the selected model was removed from the registry, clear it.
-        if (_selectedModelVersionId != null &&
-            !choices.any(
-              (choice) => choice.version.id == _selectedModelVersionId,
-            )) {
-          _selectedModelVersionId = null;
+        // Auto-select the first image if not already selected.
+        if (_selectedImageId == null && _medicalImages.isNotEmpty) {
+          _selectedImageId = _medicalImages.first.id;
+        }
+
+        // Auto-select matching model version based on image or examination modality.
+        if ((_selectedModelVersionId == null ||
+                !choices.any(
+                  (choice) => choice.version.id == _selectedModelVersionId,
+                )) &&
+            choices.isNotEmpty) {
+          final isMri = (_medicalImages.isNotEmpty &&
+                  _medicalImages.first.modality.toUpperCase() == 'MRI') ||
+              _examination?.examinationType.toUpperCase() == 'MRI';
+          final preferredModelId = isMri
+              ? MedicalModelRepository.brainTumorModelId
+              : MedicalModelRepository.bundledModelId;
+
+          final matchedChoice = choices
+              .where((c) => c.model.id == preferredModelId)
+              .firstOrNull;
+          _selectedModelVersionId =
+              (matchedChoice ?? choices.first).version.id;
         }
 
         _isLoadingInferenceData = false;
@@ -283,7 +303,9 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
   }
 
   Future<void> _runInference() async {
-    if (_selectedImageId == null) {
+    final imageId = _selectedImageId ??
+        (_medicalImages.isNotEmpty ? _medicalImages.first.id : null);
+    if (imageId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a medical image first.')),
       );
@@ -299,7 +321,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
     }
 
     final image = _medicalImages.firstWhere(
-      (img) => img.id == _selectedImageId,
+      (img) => img.id == imageId,
     );
 
     // Modality validation
@@ -778,81 +800,6 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             ),
             const SizedBox(height: 12),
 
-            // ── Image selector ──
-            InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Select Image',
-                border: OutlineInputBorder(),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedImageId,
-                  isExpanded: true,
-                  isDense: true,
-                  dropdownColor: WisteriaColors.surfaceContainer,
-                  hint: const Text(
-                    'Choose an image',
-                    style: TextStyle(color: WisteriaColors.textMuted),
-                  ),
-                  items: _medicalImages
-                      .map(
-                        (img) => DropdownMenuItem(
-                          value: img.id,
-                          child: Text(
-                            '${img.originalFileName} (${img.modality})',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedImageId = value);
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ── Model selector ──
-            InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Select Model',
-                border: OutlineInputBorder(),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedModelVersionId,
-                  isExpanded: true,
-                  isDense: true,
-                  dropdownColor: WisteriaColors.surfaceContainer,
-                  hint: const Text(
-                    'Choose a model',
-                    style: TextStyle(color: WisteriaColors.textMuted),
-                  ),
-                  items: _installedModels
-                      .map(
-                        (choice) => DropdownMenuItem(
-                          value: choice.version.id,
-                          child: Text(
-                            '${choice.model.name} — ${choice.catalog.modality} • v${choice.version.version}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedModelVersionId = value;
-                      _inferenceError = null;
-                    });
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
             // ── Selected model info card ──
             if (_selectedChoice != null) ...[
               _buildModelInfoCard(_selectedChoice!),
@@ -863,8 +810,8 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             FilledButton.icon(
               onPressed:
                   _isRunningInference ||
-                      _selectedImageId == null ||
-                      _selectedModelVersionId == null
+                      _selectedChoice == null ||
+                      _medicalImages.isEmpty
                   ? null
                   : _runInference,
               icon: _isRunningInference

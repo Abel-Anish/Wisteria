@@ -65,8 +65,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   bool _examinationSaved = false;
 
   // ── Examination metadata ──
-  String _examinationType = 'Chest X-Ray';
-  String _previousDataRange = '6 Months';
+  String get _examinationType => _isBrainTumorActive ? 'MRI' : 'Chest X-Ray';
+  static const String _previousDataRange = '6 Months';
 
   // ── Image ──
   File? _selectedImageFile;
@@ -97,24 +97,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   // Draft examination created in DB
   String? _draftExaminationId;
 
-  final List<String> _examinationTypes = [
-    'Chest X-Ray',
-    'General Examination',
-    'Blood Test',
-    'MRI',
-    'CT Scan',
-    'Other',
-  ];
-
-  final List<String> _contextWindows = [
-    '2 Months',
-    '4 Months',
-    '6 Months',
-    '1 Year',
-    '2 Years',
-    'All Available',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -124,7 +106,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     _runRepo = ModelRunRepository(widget.database);
     _imageStorage = MedicalImageStorage();
     _ensureModel();
-    _loadInstalledModels();
   }
 
   @override
@@ -137,6 +118,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   Future<void> _ensureModel() async {
     try {
       final ids = await _modelRepo.ensureBundledPneumoniaModel();
+      await _loadInstalledModels();
       if (!mounted) return;
       setState(() {
         _bundledModelId = ids.modelId;
@@ -335,7 +317,10 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       final versionId = _installedModels
           .where((m) => m.model.id == modelId)
           .map((m) => m.version.id)
-          .firstOrNull ?? _bundledVersionId!;
+          .firstOrNull ??
+          (_isBrainTumorActive
+              ? MedicalModelRepository.brainTumorVersionId
+              : _bundledVersionId!);
 
       if (_brainTumorResult != null) {
         final result = _brainTumorResult!;
@@ -636,19 +621,19 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     const specialties = [
       _SpecialtyInfo(
         name: 'Cardiology',
-        subtitle: 'Heart & Cardiovascular',
+        subtitle: 'Pneumonia Detection · Chest X-Ray',
         icon: Icons.favorite_rounded,
         color: Color(0xFFE53935),
       ),
       _SpecialtyInfo(
         name: 'Neurology',
-        subtitle: 'Brain & Nervous System',
+        subtitle: 'Brain Tumor Detection · MRI',
         icon: Icons.psychology_rounded,
         color: Color(0xFF8E24AA),
       ),
       _SpecialtyInfo(
         name: 'Ophthalmology',
-        subtitle: 'Eye & Vision',
+        subtitle: 'Eye & Vision · Coming Soon',
         icon: Icons.visibility_rounded,
         color: Color(0xFF039BE5),
       ),
@@ -782,7 +767,15 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
               borderRadius: BorderRadius.circular(WisteriaRadius.sm),
               onTap: _inferenceCompleted
                   ? null
-                  : () => setState(() => _selectedSpecialty = null),
+                  : () => setState(() {
+                      _selectedSpecialty = null;
+                      _selectedImageFile = null;
+                      _selectedImageOriginalName = null;
+                      _inferenceResult = null;
+                      _brainTumorResult = null;
+                      _inferenceCompleted = false;
+                      _inferenceError = null;
+                    }),
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 child: Text(
@@ -801,66 +794,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         // Patient info
         _buildInfoRow('Patient', widget.patientName),
         _buildInfoRow('Patient ID', widget.patientId),
-        const SizedBox(height: 16),
-
-        // Examination type dropdown
-        InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'Examination Type',
-            border: OutlineInputBorder(),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _examinationType,
-              isExpanded: true,
-              isDense: true,
-              dropdownColor: WisteriaColors.surfaceContainer,
-              items: _examinationTypes
-                  .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      ))
-                  .toList(),
-              onChanged: _inferenceCompleted
-                  ? null
-                  : (value) {
-                      if (value == null) return;
-                      setState(() => _examinationType = value);
-                    },
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Context window dropdown
-        InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'Previous Data Context',
-            border: OutlineInputBorder(),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _previousDataRange,
-              isExpanded: true,
-              isDense: true,
-              dropdownColor: WisteriaColors.surfaceContainer,
-              items: _contextWindows
-                  .map((range) => DropdownMenuItem(
-                        value: range,
-                        child: Text(range),
-                      ))
-                  .toList(),
-              onChanged: _inferenceCompleted
-                  ? null
-                  : (value) {
-                      if (value == null) return;
-                      setState(() => _previousDataRange = value);
-                    },
-            ),
-          ),
-        ),
-
         const SizedBox(height: 20),
 
         // Image selection
@@ -897,24 +830,26 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             style: BorderStyle.solid,
           ),
         ),
-        child: const Column(
+        child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.add_photo_alternate_outlined,
               size: 36,
               color: WisteriaColors.textMuted,
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
-              'Click to select a medical image',
-              style: TextStyle(
+              _isBrainTumorActive
+                  ? 'Click to select a brain MRI image'
+                  : 'Click to select a chest X-ray image',
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: WisteriaColors.textSecondary,
               ),
             ),
-            SizedBox(height: 4),
-            Text(
+            const SizedBox(height: 4),
+            const Text(
               'JPG, PNG, WebP, BMP',
               style: TextStyle(
                 fontSize: 12,
