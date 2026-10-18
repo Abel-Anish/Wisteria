@@ -4,6 +4,7 @@ import '../../core/database/database.dart';
 import '../../core/theme/wisteria_theme.dart';
 import '../doctor/doctor_profile_page.dart';
 import '../models/medical_model_page.dart';
+import '../offline_model/offline_model_page.dart';
 import '../shared/placeholder_page.dart';
 import 'settings_page.dart';
 
@@ -59,7 +60,7 @@ class SystemWorkspacePanel extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Profile, settings, models, and synchronization',
+          'Profile, settings, models, sync, and offline AI',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w400,
@@ -118,6 +119,15 @@ class SystemWorkspacePanel extends StatelessWidget {
           ),
         ),
       ),
+      _SystemCard(
+        title: 'Offline Model',
+        subtitle: 'Chat with locally running AI models',
+        icon: Icons.psychology_rounded,
+        accentColor: colors.tertiary,
+        tintColor: colors.primary,
+        imagePath: 'assets/images/model.jpg',
+        onTap: () => _navigate(context, const OfflineModelPage()),
+      ),
     ];
 
     if (isNarrow) {
@@ -151,6 +161,15 @@ class SystemWorkspacePanel extends StatelessWidget {
               Expanded(child: cards[2]),
               const SizedBox(width: 20),
               Expanded(child: cards[3]),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 160,
+          child: Row(
+            children: [
+              Expanded(child: cards[4]),
             ],
           ),
         ),
