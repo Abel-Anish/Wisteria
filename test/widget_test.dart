@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:wisteria/core/database/database.dart';
 import 'package:wisteria/core/database/repositories/medical_model_repository.dart';
+import 'package:wisteria/core/database/repositories/patient_repository.dart';
 import 'package:wisteria/core/models/system_model_catalog.dart';
 import 'package:wisteria/core/services/model_registry_service.dart';
 import 'package:wisteria/core/services/onnx_inference_service.dart';
@@ -15,6 +16,7 @@ import 'package:wisteria/features/workspace/system_workspace_panel.dart';
 import 'package:wisteria/features/examinations/create_examination_page.dart';
 import 'package:wisteria/features/examinations/examination_details_page.dart';
 import 'package:wisteria/features/patients/new_patient_registration_page.dart';
+import 'package:wisteria/features/patients/patient_details_page.dart';
 import 'package:wisteria/features/patients/patient_page.dart';
 import 'package:wisteria/features/patients/widgets/patient_age_avatar.dart';
 
@@ -29,6 +31,9 @@ void main() {
       'assets/images/model.jpg',
       'assets/images/data sync.jpg',
       'assets/images/settings.jpg',
+      'assets/images/cardiology.jpg',
+      'assets/images/neurology.jpg',
+      'assets/images/ophthalmology.jpg',
     ];
 
     for (final asset in assets) {
@@ -356,8 +361,9 @@ void main() {
       expect(find.text('Doctor Profile'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Models'), findsOneWidget);
+      expect(find.text('Offline Model'), findsOneWidget);
       expect(find.text('Sync'), findsOneWidget);
-      expect(find.byType(Image), findsNWidgets(4));
+      expect(find.byType(Image), findsNWidgets(5));
 
       await db.close();
     },
@@ -378,9 +384,9 @@ void main() {
     expect(WisteriaColors.darkPalette.border, const Color(0xFF2B3B48));
 
     expect(WisteriaColors.lightPalette.background, const Color(0xFFF0F5F6));
-    expect(WisteriaColors.lightPalette.surface, const Color(0xFFF7F4EF));
-    expect(WisteriaColors.lightPalette.textPrimary, const Color(0xFF202B35));
-    expect(WisteriaColors.lightPalette.textSecondary, const Color(0xFF667783));
+    expect(WisteriaColors.lightPalette.surface, const Color(0xFFFFFFFF));
+    expect(WisteriaColors.lightPalette.textPrimary, const Color(0xFF1E293B));
+    expect(WisteriaColors.lightPalette.textSecondary, const Color(0xFF5A6E7C));
   });
 
   test(
@@ -671,4 +677,188 @@ void main() {
       await db.close();
     },
   );
+
+  testWidgets(
+    'PatientDetailsPage renders Option C layout with compact identity header, side-by-side patient info and new exam, paired analytics and history, and bottom examinations section in Dark and Light modes',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final patientRepo = PatientRepository(db);
+
+      await patientRepo.createPatient(
+        id: 'patient-opt-a',
+        name: 'Dr. Jane Doe',
+        age: 34,
+        bloodGroup: 'O+',
+        phoneNumber: '+1 555-0199',
+        otherContact: 'jane.doe@hospital.org',
+        address: '452 Healthcare Ave, Metro City',
+      );
+
+      for (final brightness in [Brightness.dark, Brightness.light]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildWisteriaTheme(brightness: brightness),
+            home: PatientDetailsPage(
+              database: db,
+              patientId: 'patient-opt-a',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Compact Patient Identity Header
+        expect(find.text('Dr. Jane Doe'), findsOneWidget);
+        expect(find.text('patient-opt-a'), findsOneWidget);
+        expect(find.text('Edit Patient'), findsOneWidget);
+        expect(find.text('Delete'), findsOneWidget);
+
+        // Left Column: Patient Information Section (Tidy Grid)
+        expect(find.text('Patient Information'), findsOneWidget);
+        expect(find.text('AGE'), findsOneWidget);
+        expect(find.text('34 years'), findsOneWidget);
+        expect(find.text('BLOOD GROUP'), findsOneWidget);
+        expect(find.text('O+'), findsOneWidget);
+        expect(find.text('PRIMARY PHONE'), findsOneWidget);
+        expect(find.text('+1 555-0199'), findsOneWidget);
+        expect(find.text('SECONDARY CONTACT'), findsOneWidget);
+        expect(find.text('jane.doe@hospital.org'), findsOneWidget);
+        expect(find.text('RESIDENTIAL ADDRESS'), findsOneWidget);
+        expect(find.text('452 Healthcare Ave, Metro City'), findsOneWidget);
+
+        // Right Column: Prominent New Examination Card
+        expect(find.text('New Examination'), findsOneWidget);
+        expect(find.text('PRIMARY'), findsOneWidget);
+        expect(find.text('Begin Examination'), findsOneWidget);
+
+        // Right Column: Secondary Modules
+        expect(find.text('Patient Analytics'), findsOneWidget);
+        expect(find.text('Medical History & Trends'), findsOneWidget);
+        expect(find.text('Coming Soon'), findsNWidgets(2));
+
+        // Bottom Section: Examinations Records (Sensible Empty State)
+        expect(find.text('Examinations Records'), findsOneWidget);
+        expect(find.text('No Examinations Recorded'), findsOneWidget);
+      }
+
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'Back navigation fix: PatientDetailsPage -> Begin Examination -> Back returns to originating PatientDetailsPage',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final service = ModelRegistryService(db);
+      await service.synchronizeCatalog();
+
+      final patientRepo = PatientRepository(db);
+      await patientRepo.createPatient(
+        id: 'patient-nav-test',
+        name: 'Arthur Pendelton',
+        age: 58,
+        bloodGroup: 'A+',
+        phoneNumber: '+1 555-8822',
+        address: '10 Elm Street',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.dark),
+          home: PatientDetailsPage(
+            database: db,
+            patientId: 'patient-nav-test',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify we start on PatientDetailsPage
+      expect(find.text('Arthur Pendelton'), findsOneWidget);
+      expect(find.text('Begin Examination'), findsOneWidget);
+
+      // Tap Begin Examination -> opens CreateExaminationPage
+      await tester.tap(find.text('Begin Examination'));
+      await tester.pumpAndSettle();
+
+      // Verify we are now on CreateExaminationPage (Stage 0: Select Medical Specialty)
+      expect(find.text('Select Medical Specialty'), findsOneWidget);
+      expect(find.textContaining('Arthur Pendelton'), findsOneWidget);
+      expect(find.text('Cardiology'), findsOneWidget);
+      expect(find.text('Neurology'), findsOneWidget);
+      expect(find.text('Ophthalmology'), findsOneWidget);
+
+      // Verify WisteriaBackButton label indicates 'Patient Details'
+      expect(find.text('Patient Details'), findsOneWidget);
+
+      // Tap Back button
+      await tester.tap(find.text('Patient Details'));
+      await tester.pumpAndSettle();
+
+      // Crucial verification: We must return directly to Arthur Pendelton's PatientDetailsPage!
+      expect(find.text('Select Medical Specialty'), findsNothing);
+      expect(find.text('Arthur Pendelton'), findsOneWidget);
+      expect(find.text('patient-nav-test'), findsOneWidget);
+      expect(find.text('Patient Information'), findsOneWidget);
+      expect(find.text('Begin Examination'), findsOneWidget);
+
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'CreateExaminationPage Option B displays 3 stacked horizontal specialty cards with modality and availability badges',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final service = ModelRegistryService(db);
+      await service.synchronizeCatalog();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.light),
+          home: CreateExaminationPage(
+            database: db,
+            patientId: 'patient-option-b',
+            patientName: 'Elena Rostova',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify Stage 0 Header
+      expect(find.text('Select Medical Specialty'), findsOneWidget);
+
+      // Verify Option B cards
+      expect(find.text('Cardiology'), findsOneWidget);
+      expect(find.text('CHEST X-RAY'), findsOneWidget);
+      expect(find.text('Pneumonia Detection · Chest X-Ray'), findsOneWidget);
+
+      expect(find.text('Neurology'), findsOneWidget);
+      expect(find.text('BRAIN MRI'), findsOneWidget);
+      expect(find.text('Brain Tumor Detection · MRI'), findsOneWidget);
+
+      expect(find.text('Ophthalmology'), findsOneWidget);
+      expect(find.text('RETINAL / OCT'), findsOneWidget);
+      expect(find.text('Eye & Vision · Coming Soon'), findsOneWidget);
+      expect(find.text('Unavailable'), findsOneWidget);
+
+      // Badges
+      expect(find.text('ACTIVE AI'), findsNWidgets(2));
+      expect(find.text('COMING SOON'), findsOneWidget);
+
+      await db.close();
+    },
+  );
 }
+
