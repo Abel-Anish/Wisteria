@@ -97,6 +97,9 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   // Draft examination created in DB
   String? _draftExaminationId;
 
+  // Safe navigation tracking to prevent popping parent route
+  bool _isNavigatingBack = false;
+
   @override
   void initState() {
     super.initState();
@@ -401,29 +404,80 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard Examination?'),
-        content: const Text(
-          'You have unsaved work. If you leave, the AI analysis result '
-          'and any notes will be lost.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Stay'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: WisteriaColors.error,
+      builder: (context) {
+        final dlgColors = WisteriaColors.of(context);
+        return AlertDialog(
+          backgroundColor: dlgColors.surfaceContainer,
+          title: Text(
+            'Discard Examination?',
+            style: TextStyle(
+              color: dlgColors.textPrimary,
+              fontWeight: FontWeight.w700,
             ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
           ),
-        ],
-      ),
+          content: Text(
+            'You have unsaved clinical work. If you navigate away, the AI analysis result '
+            'and any diagnostic notes will be permanently lost.',
+            style: TextStyle(color: dlgColors.textSecondary, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Stay in Workflow'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: dlgColors.error,
+                foregroundColor: dlgColors.textOnPrimary,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Discard'),
+            ),
+          ],
+        );
+      },
     );
 
     return result ?? false;
+  }
+
+  /// Handles back navigation safely without popping the parent route.
+  Future<void> _handleBackNavigation() async {
+    if (_isNavigatingBack) return;
+
+    if (_selectedSpecialty != null) {
+      final shouldDiscard = await _confirmDiscard();
+      if (shouldDiscard && mounted) {
+        setState(() {
+          _selectedSpecialty = null;
+          _selectedImageFile = null;
+          _selectedImageOriginalName = null;
+          _savedImageId = null;
+          _savedImagePath = null;
+          _inferenceResult = null;
+          _brainTumorResult = null;
+          _inferenceCompleted = false;
+          _notesController.clear();
+        });
+      }
+      return;
+    }
+
+    if (_examinationSaved) {
+      _isNavigatingBack = true;
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(true);
+      }
+      return;
+    }
+
+    final shouldDiscard = await _confirmDiscard();
+    if (shouldDiscard && mounted) {
+      _isNavigatingBack = true;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(false);
+      }
+    }
   }
 
   // ── Build ──
@@ -431,124 +485,39 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
+
     return PopScope(
-      canPop: false,
+      canPop: _isNavigatingBack,
       onPopInvokedWithResult: (didPop, result) async {
-        if (_examinationSaved) {
-          Navigator.of(context).pop(true);
-          return;
-        }
-        final shouldDiscard = await _confirmDiscard();
-        if (shouldDiscard && context.mounted) {
-          Navigator.of(context).pop(false);
-        }
+        if (didPop) return;
+        await _handleBackNavigation();
       },
       child: Scaffold(
         backgroundColor: colors.background,
         body: SafeArea(
           child: Column(
             children: [
-              // ── Top bar ──
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                child: Row(
-                  children: [
-                    WisteriaBackButton(
-                      label: 'Patient',
-                      onTap: () async {
-                        if (_examinationSaved) {
-                          Navigator.of(context).pop(true);
-                          return;
-                        }
-                        final shouldDiscard = await _confirmDiscard();
-                        if (shouldDiscard && context.mounted) {
-                          Navigator.of(context).pop(false);
-                        }
-                      },
-                    ),
-                    const Spacer(),
-                    const Text(
-                      'New Examination',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: WisteriaColors.textMuted,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // ── Top Navigation Bar ──
+              _buildTopBar(colors),
 
-              // ── Content ──
+              // ── Main Responsive Content Area ──
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(28, 16, 28, 40),
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 820),
+                      constraints: BoxConstraints(
+                        maxWidth: _selectedSpecialty == null ? 1160 : 1440,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Page header
-                          _buildPageHeader(),
-                          const SizedBox(height: 36),
-
-                          // Specialty selection or examination workflow
+                          // Specialty selection (Stage 0) or active examination workflow (Stages A-E)
                           if (_selectedSpecialty == null) ...[
-                            _buildSpecialtySelection(),
+                            _buildSpecialtySelection(colors),
                           ] else ...[
-                            _buildStageA(),
-                            // Show unsupported specialty notice (e.g. Ophthalmology)
-                            if (_activeModelId == null) ...[
-                              const SizedBox(height: 20),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: WisteriaColors.surfaceContainer,
-                                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
-                                  border: Border.all(color: WisteriaColors.border),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.info_outline_rounded, size: 20, color: WisteriaColors.textMuted),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'No AI model is currently available for $_selectedSpecialty. '
-                                        'This specialty will be supported in a future update.',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: WisteriaColors.textSecondary,
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ] else ...[
-                            const SizedBox(height: 20),
-                            _buildStageB(),
-                            if (_inferenceCompleted && (_inferenceResult != null || _brainTumorResult != null)) ...[
-                              const SizedBox(height: 20),
-                              _buildStageC(),
-                            ],
-                            if (_inferenceCompleted) ...[
-                              const SizedBox(height: 20),
-                              _buildStageD(),
-                              const SizedBox(height: 20),
-                              _buildStageE(),
-                            ],
-                            ],
+                            _buildActiveExaminationWorkflow(colors),
                           ],
-                          const SizedBox(height: 48),
                         ],
                       ),
                     ),
@@ -562,212 +531,380 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
-  // ── Page Header ──
+  // ── Top Navigation Bar ──
 
-  Widget _buildPageHeader() {
-    return Row(
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: WisteriaColors.primary.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(WisteriaRadius.lg),
-            border: Border.all(
-              color: WisteriaColors.primary.withValues(alpha: 0.15),
+  Widget _buildTopBar(WisteriaColorPalette colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.background,
+        border: Border(
+          bottom: BorderSide(
+            color: colors.borderSubtle,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          WisteriaBackButton(
+            label: _selectedSpecialty != null ? 'Specialties' : 'Patient Details',
+            onTap: _handleBackNavigation,
+          ),
+          const SizedBox(width: 16),
+          Container(
+            height: 16,
+            width: 1,
+            color: colors.border,
+          ),
+          const SizedBox(width: 16),
+          Text(
+            'New Clinical Examination',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: colors.textMuted,
+              letterSpacing: 0.2,
             ),
           ),
-          child: const Icon(
-            Icons.biotech_rounded,
-            color: WisteriaColors.primary,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 18),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'New Examination',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: WisteriaColors.textPrimary,
-                  letterSpacing: -0.2,
+          const Spacer(),
+          // Patient Identity Pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainer,
+              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              border: Border.all(color: colors.border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.person_outline_rounded,
+                  size: 15,
+                  color: colors.primary,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${widget.patientName} · ${widget.patientId}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: WisteriaColors.textMuted,
-                  fontFamily: 'monospace',
+                const SizedBox(width: 8),
+                Text(
+                  '${widget.patientName} · ${widget.patientId}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   // ── Stage 0: Specialty Selection ──
 
-  Widget _buildSpecialtySelection() {
-    const specialties = [
-      _SpecialtyInfo(
+  Widget _buildSpecialtySelection(WisteriaColorPalette colors) {
+    final cards = [
+      _SpecialtyCard(
         name: 'Cardiology',
         subtitle: 'Pneumonia Detection · Chest X-Ray',
+        description:
+            'Automated ResNet-18 neural network analysis for pulmonary opacity, consolidation, and acute bacterial or viral pneumonia screening.',
+        imagePath: 'assets/images/cardiology.jpg',
+        modality: 'CHEST X-RAY',
         icon: Icons.favorite_rounded,
-        color: Color(0xFFE53935),
+        accentColor: const Color(0xFF098FA6),
+        isComingSoon: false,
+        onTap: () {
+          setState(() {
+            _selectedSpecialty = 'Cardiology';
+          });
+        },
       ),
-      _SpecialtyInfo(
+      _SpecialtyCard(
         name: 'Neurology',
         subtitle: 'Brain Tumor Detection · MRI',
+        description:
+            'Multi-class brain MRI scan classification to detect and categorize glioma, meningioma, and pituitary tumors from normal tissue.',
+        imagePath: 'assets/images/neurology.jpg',
+        modality: 'BRAIN MRI',
         icon: Icons.psychology_rounded,
-        color: Color(0xFF8E24AA),
+        accentColor: const Color(0xFF8E24AA),
+        isComingSoon: false,
+        onTap: () {
+          setState(() {
+            _selectedSpecialty = 'Neurology';
+          });
+        },
       ),
-      _SpecialtyInfo(
+      _SpecialtyCard(
         name: 'Ophthalmology',
         subtitle: 'Eye & Vision · Coming Soon',
+        description:
+            'Automated retinal fundus photography and optical coherence tomography (OCT) diagnostics for diabetic retinopathy and maculopathy.',
+        imagePath: 'assets/images/ophthalmology.jpg',
+        modality: 'RETINAL / OCT',
         icon: Icons.visibility_rounded,
-        color: Color(0xFF039BE5),
+        accentColor: const Color(0xFF0288D1),
+        isComingSoon: true,
+        onTap: null, // Disabled: prevents launching unavailable workflow
       ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Select Medical Specialty',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: WisteriaColors.textPrimary,
-          ),
+        // Page Header
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Icon(
+                Icons.biotech_rounded,
+                color: colors.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Medical Specialty',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Choose the clinical area for this examination to load the appropriate deep-learning AI model.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
-        const Text(
-          'Choose the clinical area for this examination to load the appropriate AI model.',
-          style: TextStyle(
-            fontSize: 13,
-            color: WisteriaColors.textMuted,
-            height: 1.4,
-          ),
-        ),
+
         const SizedBox(height: 24),
-        ...specialties.map((s) => _buildSpecialtyCard(s)),
+
+        // Three spacious horizontal cards stacked vertically (Option B)
+        cards[0],
+        const SizedBox(height: 20),
+        cards[1],
+        const SizedBox(height: 20),
+        cards[2],
       ],
     );
   }
 
-  Widget _buildSpecialtyCard(_SpecialtyInfo info) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(WisteriaRadius.lg),
-        onTap: () {
-          setState(() {
-            _selectedSpecialty = info.name;
-          });
-        },
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: WisteriaColors.surfaceLow,
-            borderRadius: BorderRadius.circular(WisteriaRadius.lg),
-            border: Border.all(color: WisteriaColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: info.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
-                ),
-                child: Icon(
-                  info.icon,
-                  color: info.color,
-                  size: 26,
-                ),
+  // ── Active Examination Workflow (Stages A to E) ──
+
+  Widget _buildActiveExaminationWorkflow(WisteriaColorPalette colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Active Specialty & Patient Context Strip
+        _buildActiveSpecialtyHeader(colors),
+
+        const SizedBox(height: 24),
+
+        // Responsive 2-Column Clinical PACS Workstation Layout
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 1000;
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column: Medical Image Viewer & Clinical Guidance
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStageA(colors),
+                        const SizedBox(height: 20),
+                        _buildClinicalDisclaimer(colors),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 24),
+
+                  // Right Column: AI Analysis, Diagnostic Results, Doctor Notes, Save
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStageB(colors),
+                        if (_inferenceCompleted &&
+                            (_inferenceResult != null ||
+                                _brainTumorResult != null)) ...[
+                          const SizedBox(height: 20),
+                          _buildStageC(colors),
+                        ],
+                        if (_inferenceCompleted) ...[
+                          const SizedBox(height: 20),
+                          _buildStageD(colors),
+                          const SizedBox(height: 20),
+                          _buildStageE(colors),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            // Single column layout for narrower viewports
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStageA(colors),
+                const SizedBox(height: 20),
+                _buildStageB(colors),
+                if (_inferenceCompleted &&
+                    (_inferenceResult != null ||
+                        _brainTumorResult != null)) ...[
+                  const SizedBox(height: 20),
+                  _buildStageC(colors),
+                ],
+                if (_inferenceCompleted) ...[
+                  const SizedBox(height: 20),
+                  _buildStageD(colors),
+                  const SizedBox(height: 20),
+                  _buildStageE(colors),
+                ],
+                const SizedBox(height: 20),
+                _buildClinicalDisclaimer(colors),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // ── Active Specialty Context Banner ──
+
+  Widget _buildActiveSpecialtyHeader(WisteriaColorPalette colors) {
+    final isCardiology = _selectedSpecialty == 'Cardiology';
+    final specialtyAccent =
+        isCardiology ? colors.primary : const Color(0xFF8E24AA);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: colors.surfaceLow,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: specialtyAccent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              border: Border.all(
+                color: specialtyAccent.withValues(alpha: 0.3),
               ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: Icon(
+              isCardiology
+                  ? Icons.favorite_rounded
+                  : Icons.psychology_rounded,
+              color: specialtyAccent,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
                     Text(
-                      info.name,
-                      style: const TextStyle(
+                      _selectedSpecialty ?? '',
+                      style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: WisteriaColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      info.subtitle,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: WisteriaColors.textMuted,
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: specialtyAccent.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        border: Border.all(
+                          color: specialtyAccent.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Text(
+                        _activeModality,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: specialtyAccent,
+                          letterSpacing: 0.4,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: WisteriaColors.textMuted,
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  isCardiology
+                      ? 'Pneumonia Detection · Chest X-Ray Workflow'
+                      : 'Brain Tumor Detection · MRI Workflow',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textMuted,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // ── Stage A: Examination Setup ──
-
-  Widget _buildStageA() {
-    return _buildSection(
-      number: '1',
-      title: 'Examination Setup',
-      icon: Icons.assignment_outlined,
-      children: [
-        // Selected specialty chip
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: WisteriaColors.primary.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(WisteriaRadius.full),
-                border: Border.all(
-                  color: WisteriaColors.primary.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Text(
-                _selectedSpecialty ?? '',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: WisteriaColors.primary,
-                ),
+          // Change specialty button (disabled if inference finished to preserve integrity)
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colors.textSecondary,
+              side: BorderSide(color: colors.border),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
               ),
             ),
-            const SizedBox(width: 8),
-            InkWell(
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              onTap: _inferenceCompleted
-                  ? null
-                  : () => setState(() {
+            onPressed: _inferenceCompleted || _runningInference
+                ? null
+                : () {
+                    setState(() {
                       _selectedSpecialty = null;
                       _selectedImageFile = null;
                       _selectedImageOriginalName = null;
@@ -775,85 +912,156 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                       _brainTumorResult = null;
                       _inferenceCompleted = false;
                       _inferenceError = null;
-                    }),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Text(
-                  'Change',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: WisteriaColors.textMuted,
-                  ),
+                    });
+                  },
+            icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+            label: const Text(
+              'Change',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Stage A: Examination Setup & Medical Image Viewer ──
+
+  Widget _buildStageA(WisteriaColorPalette colors) {
+    return _buildSection(
+      number: '1',
+      title: 'Examination Setup',
+      icon: Icons.assignment_outlined,
+      colors: colors,
+      children: [
+        // Patient Information Context Row
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainer,
+            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            border: Border.all(color: colors.borderSubtle),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.person_outline_rounded, size: 16, color: colors.primary),
+              const SizedBox(width: 8),
+              Text(
+                widget.patientName,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '·',
+                style: TextStyle(color: colors.textMuted),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.patientId,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Medical Image Section Header
+        Row(
+          children: [
+            Icon(Icons.image_outlined, size: 16, color: colors.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Medical Image',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-
-        // Patient info
-        _buildInfoRow('Patient', widget.patientName),
-        _buildInfoRow('Patient ID', widget.patientId),
-        const SizedBox(height: 20),
-
-        // Image selection
-        const Text(
-          'Medical Image',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: WisteriaColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
 
         if (_selectedImageFile != null)
-          _buildSelectedImagePreview()
+          _buildSelectedImagePreview(colors)
         else
-          _buildImagePicker(),
+          _buildImagePicker(colors),
       ],
     );
   }
 
-  Widget _buildImagePicker() {
+  Widget _buildImagePicker(WisteriaColorPalette colors) {
     return InkWell(
-      borderRadius: BorderRadius.circular(WisteriaRadius.md),
+      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
       onTap: _runningInference ? null : _pickImage,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
         decoration: BoxDecoration(
-          color: WisteriaColors.surfaceContainer,
-          borderRadius: BorderRadius.circular(WisteriaRadius.md),
+          color: colors.surfaceContainer,
+          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
           border: Border.all(
-            color: WisteriaColors.border,
-            style: BorderStyle.solid,
+            color: colors.border,
+            width: 1.5,
           ),
         ),
         child: Column(
           children: [
-            const Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 36,
-              color: WisteriaColors.textMuted,
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 26,
+                color: colors.primary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
               _isBrainTumorActive
                   ? 'Click to select a brain MRI image'
                   : 'Click to select a chest X-ray image',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: WisteriaColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
-            const Text(
+            const SizedBox(height: 6),
+            Text(
               'JPG, PNG, WebP, BMP',
               style: TextStyle(
                 fontSize: 12,
-                color: WisteriaColors.textMuted,
+                color: colors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 14),
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                ),
+              ),
+              onPressed: _runningInference ? null : _pickImage,
+              icon: const Icon(Icons.folder_open_rounded, size: 16),
+              label: const Text(
+                'Browse Image File',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -862,81 +1070,120 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
-  Widget _buildSelectedImagePreview() {
+  Widget _buildSelectedImagePreview(WisteriaColorPalette colors) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: WisteriaColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.md),
-        border: Border.all(
-          color: WisteriaColors.primary.withValues(alpha: 0.25),
-        ),
+        color: colors.surfaceContainer,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: colors.border),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail
+          // Medical Image PACS Display Canvas
           Container(
-            width: 100,
-            height: 80,
+            width: double.infinity,
+            height: 340,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              color: WisteriaColors.surfaceHigh,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.file(
-              _selectedImageFile!,
-              fit: BoxFit.cover,
-              errorBuilder: (ctx, err, stack) => const Icon(
-                Icons.broken_image_outlined,
-                color: WisteriaColors.textMuted,
+              color: Colors.black,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(WisteriaRadius.sm),
               ),
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Center(
+                  child: Image.file(
+                    _selectedImageFile!,
+                    fit: BoxFit.contain,
+                    errorBuilder: (ctx, err, stack) => Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: colors.textMuted,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(
+                      _activeModality,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(width: 16),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Metadata and change image bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                Text(
-                  _selectedImageOriginalName ?? 'Selected image',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: WisteriaColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Icon(
+                  Icons.insert_drive_file_outlined,
+                  size: 18,
+                  color: colors.primary,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _selectedImageFile!.path,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: WisteriaColors.textMuted,
-                    fontFamily: 'monospace',
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                if (!_inferenceCompleted)
-                  InkWell(
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                    onTap: _runningInference ? null : _pickImage,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        'Change image',
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedImageOriginalName ?? 'Selected Medical Image',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: WisteriaColors.primary,
+                          color: colors.textPrimary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _selectedImageFile!.path,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colors.textMuted,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (!_inferenceCompleted)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: colors.primary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                    ),
+                    onPressed: _runningInference ? null : _pickImage,
+                    icon: const Icon(Icons.refresh_rounded, size: 15),
+                    label: const Text(
+                      'Replace',
+                      style: TextStyle(fontSize: 12),
                     ),
                   ),
               ],
@@ -947,45 +1194,84 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
+  // ── Clinical Disclaimer ──
+
+  Widget _buildClinicalDisclaimer(WisteriaColorPalette colors) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surfaceLow,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.verified_user_outlined,
+            size: 20,
+            color: colors.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Wisteria Clinical AI operates entirely offline using local ONNX neural network execution. '
+              'Inference results are assistive diagnostic aids and do not replace professional medical judgment.',
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.textSecondary,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Stage B: AI Analysis ──
 
-  Widget _buildStageB() {
+  Widget _buildStageB(WisteriaColorPalette colors) {
     return _buildSection(
       number: '2',
       title: 'AI Analysis',
-      icon: Icons.auto_awesome_outlined,
+      icon: Icons.memory_rounded,
+      colors: colors,
       children: [
-        // Model info
         if (_loadingModel)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(
-                color: WisteriaColors.primary,
-              ),
+              padding: const EdgeInsets.all(20),
+              child: CircularProgressIndicator(color: colors.primary),
             ),
           )
         else if (_modelError != null)
-          _buildErrorCard(_modelError!)
+          _buildErrorCard(_modelError!, colors)
         else ...[
-          // Model card — dynamic based on specialty
+          // Model card
           Builder(
             builder: (_) {
               final catalog = _activeModelId != null
                   ? SystemModelCatalog.getById(_activeModelId!)
                   : null;
-              final modelName = catalog?.displayName ?? 'Pneumonia ResNet18';
+              final modelName = catalog?.displayName ??
+                  (_isBrainTumorActive
+                      ? 'Brain Tumor ResNet18'
+                      : 'Pneumonia ResNet18');
               final modelMeta = catalog != null
                   ? '${catalog.task} · ${catalog.modality} · ${catalog.runtime} · v${catalog.version}'
-                  : 'Pneumonia Classification · X-Ray · ONNX Runtime · v1.0.0';
+                  : (_isBrainTumorActive
+                      ? 'Tumor Classification · MRI · ONNX Runtime · v1.0.0'
+                      : 'Pneumonia Classification · X-Ray · ONNX Runtime · v1.0.0');
 
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: WisteriaColors.surfaceContainer,
+                  color: colors.surfaceContainer,
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(color: WisteriaColors.border),
+                  border: Border.all(color: colors.border),
                 ),
                 child: Row(
                   children: [
@@ -993,13 +1279,13 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: WisteriaColors.primary.withValues(alpha: 0.10),
+                        color: colors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                       ),
-                      child: const Icon(
-                        Icons.memory_rounded,
+                      child: Icon(
+                        Icons.developer_board_rounded,
                         size: 20,
-                        color: WisteriaColors.primary,
+                        color: colors.primary,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -1009,18 +1295,18 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                         children: [
                           Text(
                             modelName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: WisteriaColors.textPrimary,
+                              color: colors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             modelMeta,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: WisteriaColors.textMuted,
+                              color: colors.textMuted,
                             ),
                           ),
                         ],
@@ -1032,15 +1318,18 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: WisteriaColors.success.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
+                        color: colors.success.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        border: Border.all(
+                          color: colors.success.withValues(alpha: 0.25),
+                        ),
                       ),
-                      child: const Text(
-                        'LOCAL',
+                      child: Text(
+                        'LOCAL ONNX',
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: WisteriaColors.success,
+                          fontWeight: FontWeight.w700,
+                          color: colors.success,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -1051,92 +1340,71 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-          // Clinical disclaimer
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: WisteriaColors.warning.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: Border.all(
-                color: WisteriaColors.warning.withValues(alpha: 0.15),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 18,
-                  color: WisteriaColors.warning.withValues(alpha: 0.7),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'AI-generated classification only. Model output is not a definitive medical diagnosis and must be reviewed by a qualified clinician.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: WisteriaColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Run button
+          // Run Inference Button
           if (!_inferenceCompleted)
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.textOnPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  ),
+                ),
                 onPressed: _runningInference ||
                         _selectedImageFile == null ||
                         !_modelAvailable
                     ? null
                     : _runAIAnalysis,
                 icon: _runningInference
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: WisteriaColors.textOnPrimary,
+                          color: colors.textOnPrimary,
                         ),
                       )
                     : const Icon(Icons.play_arrow_rounded, size: 20),
                 label: Text(
                   _runningInference
-                      ? 'Running AI analysis...'
+                      ? 'Executing Neural Inference...'
                       : _selectedImageFile == null
                           ? 'Select an image first'
-                          : 'Run $_activeModelDisplayName',
+                          : 'Run $_activeModelDisplayName Analysis',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
 
           if (_runningInference) ...[
             const SizedBox(height: 12),
-            const LinearProgressIndicator(
-              color: WisteriaColors.primary,
-              backgroundColor: WisteriaColors.surfaceHigh,
+            LinearProgressIndicator(
+              color: colors.primary,
+              backgroundColor: colors.surfaceContainer,
             ),
           ],
 
           if (_inferenceError != null) ...[
-            const SizedBox(height: 12),
-            _buildErrorCard(_inferenceError!),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            _buildErrorCard(_inferenceError!, colors),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _runningInference ? null : _runAIAnalysis,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Retry AI Analysis'),
+                label: const Text('Retry AI Inference'),
               ),
             ),
           ],
@@ -1144,28 +1412,28 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           if (_inferenceCompleted)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: WisteriaColors.success.withValues(alpha: 0.08),
+                color: colors.success.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                 border: Border.all(
-                  color: WisteriaColors.success.withValues(alpha: 0.2),
+                  color: colors.success.withValues(alpha: 0.25),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(
                     Icons.check_circle_rounded,
                     size: 18,
-                    color: WisteriaColors.success,
+                    color: colors.success,
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Text(
                     'AI analysis completed successfully',
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: WisteriaColors.success,
+                      fontWeight: FontWeight.w600,
+                      color: colors.success,
                     ),
                   ),
                 ],
@@ -1178,35 +1446,35 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
   // ── Stage C: AI Results ──
 
-  Widget _buildStageC() {
-    // Determine if we have a brain tumor result or pneumonia result
+  Widget _buildStageC(WisteriaColorPalette colors) {
     if (_brainTumorResult != null) {
-      return _buildStageCBrainTumor(_brainTumorResult!);
+      return _buildStageCBrainTumor(_brainTumorResult!, colors);
     }
-    return _buildStageCPneumonia(_inferenceResult!);
+    return _buildStageCPneumonia(_inferenceResult!, colors);
   }
 
-  Widget _buildStageCPneumonia(PneumoniaInferenceResult result) {
+  Widget _buildStageCPneumonia(
+    PneumoniaInferenceResult result,
+    WisteriaColorPalette colors,
+  ) {
     final isPneumonia = result.prediction == 'PNEUMONIA';
+    final alertColor = isPneumonia ? colors.warning : colors.success;
 
     return _buildSection(
       number: '3',
-      title: 'AI Classification Result',
+      title: 'AI Classification Findings',
       icon: Icons.analytics_outlined,
+      colors: colors,
       children: [
-        // Prediction header
+        // Primary Prediction Banner
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isPneumonia
-                ? WisteriaColors.warning.withValues(alpha: 0.08)
-                : WisteriaColors.success.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(WisteriaRadius.md),
+            color: alertColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             border: Border.all(
-              color: isPneumonia
-                  ? WisteriaColors.warning.withValues(alpha: 0.2)
-                  : WisteriaColors.success.withValues(alpha: 0.2),
+              color: alertColor.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -1215,18 +1483,14 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: isPneumonia
-                      ? WisteriaColors.warning.withValues(alpha: 0.12)
-                      : WisteriaColors.success.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
+                  color: alertColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                 ),
                 child: Icon(
                   isPneumonia
                       ? Icons.warning_amber_rounded
                       : Icons.check_circle_outline_rounded,
-                  color: isPneumonia
-                      ? WisteriaColors.warning
-                      : WisteriaColors.success,
+                  color: alertColor,
                   size: 28,
                 ),
               ),
@@ -1240,17 +1504,17 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: isPneumonia
-                            ? WisteriaColors.warning
-                            : WisteriaColors.success,
+                        color: alertColor,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
-                      'Confidence: ${(result.confidence * 100).toStringAsFixed(2)}%',
-                      style: const TextStyle(
+                      'Model Confidence: ${(result.confidence * 100).toStringAsFixed(2)}%',
+                      style: TextStyle(
                         fontSize: 13,
-                        color: WisteriaColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -1260,51 +1524,58 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           ),
         ),
 
+        const SizedBox(height: 18),
+
+        // Probability Distribution Bars
+        _buildProbabilityBar(
+          label: 'NORMAL',
+          percentage: result.normalProbability,
+          color: colors.success,
+          colors: colors,
+        ),
+        const SizedBox(height: 10),
+        _buildProbabilityBar(
+          label: 'PNEUMONIA',
+          percentage: result.pneumoniaProbability,
+          color: colors.warning,
+          colors: colors,
+        ),
+
         const SizedBox(height: 16),
 
-        // Detailed results
-        _buildResultRow('Predicted Class', result.prediction),
-        _buildResultRow(
-          'Model Confidence',
-          '${(result.confidence * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow(
-          'NORMAL Probability',
-          '${(result.normalProbability * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow(
-          'PNEUMONIA Probability',
-          '${(result.pneumoniaProbability * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow('Model', 'Pneumonia ResNet18 v1.0.0'),
-        _buildResultRow('Execution Time', _formatDateTime(result.executedAt)),
+        _buildResultRow('Model Identifier', 'Pneumonia ResNet-18 (v1.0.0)', colors),
+        _buildResultRow('Execution Timestamp', _formatDateTime(result.executedAt), colors),
 
         const SizedBox(height: 12),
-        _buildAILabel(),
+        _buildAILabel(colors),
       ],
     );
   }
 
-  Widget _buildStageCBrainTumor(BrainTumorInferenceResult result) {
+  Widget _buildStageCBrainTumor(
+    BrainTumorInferenceResult result,
+    WisteriaColorPalette colors,
+  ) {
     final isNoTumor = result.prediction == 'notumor';
-    final displayName = BrainTumorInferenceService
-        .classDisplayNames[BrainTumorInferenceService.classLabels.indexOf(result.prediction)];
-    final alertColor = isNoTumor ? WisteriaColors.success : WisteriaColors.warning;
+    final displayName = BrainTumorInferenceService.classDisplayNames[
+        BrainTumorInferenceService.classLabels.indexOf(result.prediction)];
+    final alertColor = isNoTumor ? colors.success : colors.warning;
 
     return _buildSection(
       number: '3',
-      title: 'AI Classification Result',
+      title: 'AI Classification Findings',
       icon: Icons.analytics_outlined,
+      colors: colors,
       children: [
-        // Prediction header
+        // Primary Prediction Banner
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: alertColor.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(WisteriaRadius.md),
+            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             border: Border.all(
-              color: alertColor.withValues(alpha: 0.2),
+              color: alertColor.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -1313,8 +1584,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: alertColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.md),
+                  color: alertColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                 ),
                 child: Icon(
                   isNoTumor
@@ -1335,14 +1606,16 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: alertColor,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
-                      'Confidence: ${(result.confidence * 100).toStringAsFixed(2)}%',
-                      style: const TextStyle(
+                      'Model Confidence: ${(result.confidence * 100).toStringAsFixed(2)}%',
+                      style: TextStyle(
                         fontSize: 13,
-                        color: WisteriaColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -1352,62 +1625,125 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           ),
         ),
 
+        const SizedBox(height: 18),
+
+        // Multi-class probability bars
+        _buildProbabilityBar(
+          label: 'Glioma',
+          percentage: result.gliomaScore,
+          color: const Color(0xFFE53935),
+          colors: colors,
+        ),
+        const SizedBox(height: 8),
+        _buildProbabilityBar(
+          label: 'Meningioma',
+          percentage: result.meningiomaScore,
+          color: const Color(0xFFFB8C00),
+          colors: colors,
+        ),
+        const SizedBox(height: 8),
+        _buildProbabilityBar(
+          label: 'Pituitary',
+          percentage: result.pituitaryScore,
+          color: const Color(0xFF8E24AA),
+          colors: colors,
+        ),
+        const SizedBox(height: 8),
+        _buildProbabilityBar(
+          label: 'No Tumor',
+          percentage: result.noTumorScore,
+          color: colors.success,
+          colors: colors,
+        ),
+
         const SizedBox(height: 16),
 
-        // Detailed results
-        _buildResultRow('Predicted Class', displayName),
-        _buildResultRow(
-          'Model Confidence',
-          '${(result.confidence * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow(
-          'Glioma Probability',
-          '${(result.gliomaScore * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow(
-          'Meningioma Probability',
-          '${(result.meningiomaScore * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow(
-          'No Tumor Probability',
-          '${(result.noTumorScore * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow(
-          'Pituitary Probability',
-          '${(result.pituitaryScore * 100).toStringAsFixed(2)}%',
-        ),
-        _buildResultRow('Model', 'Brain Tumor ResNet18 v1.0.0'),
-        _buildResultRow('Execution Time', _formatDateTime(result.executedAt)),
+        _buildResultRow('Model Identifier', 'Brain Tumor ResNet-18 (v1.0.0)', colors),
+        _buildResultRow('Execution Timestamp', _formatDateTime(result.executedAt), colors),
 
         const SizedBox(height: 12),
-        _buildAILabel(),
+        _buildAILabel(colors),
       ],
     );
   }
 
-  Widget _buildAILabel() {
+  Widget _buildProbabilityBar({
+    required String label,
+    required double percentage,
+    required Color color,
+    required WisteriaColorPalette colors,
+  }) {
+    final pctString = (percentage * 100).toStringAsFixed(1);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainer,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: colors.borderSubtle),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+              Text(
+                '$pctString%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: percentage > 0.4 ? color : colors.textMuted,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            child: LinearProgressIndicator(
+              value: percentage.clamp(0.0, 1.0),
+              backgroundColor: colors.borderSubtle,
+              color: color,
+              minHeight: 6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAILabel(WisteriaColorPalette colors) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: WisteriaColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.full),
-        border: Border.all(color: WisteriaColors.border),
+        color: colors.surfaceContainer,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: colors.border),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.auto_awesome_outlined,
-            size: 14,
-            color: WisteriaColors.primary,
+            size: 13,
+            color: colors.primary,
           ),
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Text(
-            'AI-generated classification result',
+            'Automated Local AI Evaluation',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: WisteriaColors.textMuted,
+              color: colors.textMuted,
             ),
           ),
         ],
@@ -1417,28 +1753,34 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
   // ── Stage D: Doctor Notes ──
 
-  Widget _buildStageD() {
+  Widget _buildStageD(WisteriaColorPalette colors) {
     return _buildSection(
       number: '4',
-      title: 'Doctor Notes',
-      icon: Icons.notes_outlined,
+      title: 'Clinical Observations & Notes',
+      icon: Icons.edit_note_rounded,
+      colors: colors,
       children: [
-        const Text(
-          'Enter your clinical observations and notes. This field is optional.',
+        Text(
+          'Record clinician assessment, clinical correlation, and treatment notes for this examination.',
           style: TextStyle(
-            fontSize: 13,
-            color: WisteriaColors.textMuted,
+            fontSize: 12,
+            color: colors.textMuted,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         TextFormField(
           controller: _notesController,
-          maxLines: 6,
-          style: const TextStyle(color: WisteriaColors.textPrimary),
-          decoration: const InputDecoration(
-            hintText: 'Clinical observations, assessment, and plan...',
-            border: OutlineInputBorder(),
+          maxLines: 4,
+          style: TextStyle(color: colors.textPrimary, fontSize: 13),
+          decoration: InputDecoration(
+            hintText: 'Enter clinical observations, assessment, and next steps...',
+            hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
+            fillColor: colors.surfaceContainer,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              borderSide: BorderSide(color: colors.border),
+            ),
             alignLabelWithHint: true,
           ),
         ),
@@ -1446,40 +1788,54 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
-  // ── Stage E: Save ──
+  // ── Stage E: Save Examination ──
 
-  Widget _buildStageE() {
+  Widget _buildStageE(WisteriaColorPalette colors) {
     return _buildSection(
       number: '5',
-      title: 'Save Examination',
+      title: 'Finalize Examination',
       icon: Icons.save_outlined,
+      colors: colors,
       children: [
         if (_saveError != null) ...[
-          _buildErrorCard(_saveError!),
+          _buildErrorCard(_saveError!, colors),
           const SizedBox(height: 16),
         ],
 
-        const Text(
-          'Review the AI result and your notes above, then save the completed examination.',
+        Text(
+          'Commit the AI inference findings, medical image reference, and clinical notes to the patient record.',
           style: TextStyle(
-            fontSize: 13,
-            color: WisteriaColors.textMuted,
+            fontSize: 12,
+            color: colors.textMuted,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: _saving || _examinationSaved ? null : _saveExamination,
+            style: FilledButton.styleFrom(
+              backgroundColor:
+                  _examinationSaved ? colors.success : colors.primary,
+              foregroundColor: colors.textOnPrimary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              ),
+            ),
+            onPressed:
+                _saving || _examinationSaved ? null : _saveExamination,
             icon: _saving
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: WisteriaColors.textOnPrimary,
+                      color: colors.textOnPrimary,
                     ),
                   )
                 : _examinationSaved
@@ -1487,10 +1843,14 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                     : const Icon(Icons.save_rounded, size: 20),
             label: Text(
               _saving
-                  ? 'Saving...'
+                  ? 'Committing to Patient Record...'
                   : _examinationSaved
                       ? 'Examination Saved'
-                      : 'Save Examination',
+                      : 'Save & Complete Examination',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -1498,21 +1858,22 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
-  // ── Shared Widgets ──
+  // ── Reusable Section Container ──
 
   Widget _buildSection({
     required String number,
     required String title,
     required IconData icon,
+    required WisteriaColorPalette colors,
     required List<Widget> children,
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: WisteriaColors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.lg),
-        border: Border.all(color: WisteriaColors.border),
+        color: colors.surfaceLow,
+        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1520,80 +1881,58 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           Row(
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
-                  color: WisteriaColors.primary.withValues(alpha: 0.12),
+                  color: colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  border: Border.all(
+                    color: colors.primary.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     number,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: WisteriaColors.primary,
+                      color: colors.primary,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Icon(
                 icon,
-                size: 20,
-                color: WisteriaColors.primary.withValues(alpha: 0.7),
+                size: 18,
+                color: colors.primary,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: WisteriaColors.textPrimary,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildResultRow(
+    String label,
+    String value,
+    WisteriaColorPalette colors,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: WisteriaColors.textMuted,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: WisteriaColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1601,10 +1940,10 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: WisteriaColors.textMuted,
+                color: colors.textMuted,
               ),
             ),
           ),
@@ -1612,10 +1951,10 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: WisteriaColors.textPrimary,
+                color: colors.textPrimary,
               ),
             ),
           ),
@@ -1624,32 +1963,32 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     );
   }
 
-  Widget _buildErrorCard(String message) {
+  Widget _buildErrorCard(String message, WisteriaColorPalette colors) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: WisteriaColors.error.withValues(alpha: 0.08),
+        color: colors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(WisteriaRadius.sm),
         border: Border.all(
-          color: WisteriaColors.error.withValues(alpha: 0.2),
+          color: colors.error.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             size: 18,
-            color: WisteriaColors.error,
+            color: colors.error,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: WisteriaColors.error,
+                color: colors.error,
                 height: 1.4,
               ),
             ),
@@ -1674,6 +2013,402 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   }
 }
 
+// ── Specialty Card Component with Image, Hover & Theme Adaptation ──
+
+class _SpecialtyCard extends StatefulWidget {
+  final String name;
+  final String subtitle;
+  final String description;
+  final String imagePath;
+  final String modality;
+  final IconData icon;
+  final Color accentColor;
+  final bool isComingSoon;
+  final VoidCallback? onTap;
+
+  const _SpecialtyCard({
+    required this.name,
+    required this.subtitle,
+    required this.description,
+    required this.imagePath,
+    required this.modality,
+    required this.icon,
+    required this.accentColor,
+    required this.isComingSoon,
+    required this.onTap,
+  });
+
+  @override
+  State<_SpecialtyCard> createState() => _SpecialtyCardState();
+}
+
+class _SpecialtyCardState extends State<_SpecialtyCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEnabled = !widget.isComingSoon && widget.onTap != null;
+
+    final borderColor = isEnabled && _isHovered
+        ? colors.primary.withValues(alpha: 0.75)
+        : colors.border;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 680;
+        final imageWidth = isCompact
+            ? double.infinity
+            : (constraints.maxWidth * 0.30).clamp(240.0, 320.0);
+
+        Widget imagePanel = SizedBox(
+          width: imageWidth,
+          height: isCompact ? 140 : 165,
+          child: ClipRRect(
+            borderRadius: isCompact
+                ? BorderRadius.vertical(top: Radius.circular(WisteriaRadius.sm))
+                : BorderRadius.horizontal(
+                    left: Radius.circular(WisteriaRadius.sm),
+                  ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  color: isDark
+                      ? const Color(0xFF0D131A)
+                      : colors.surfaceContainer,
+                ),
+                Image.asset(
+                  widget.imagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, stack) => Container(
+                    color: colors.surfaceContainer,
+                    child: Icon(
+                      widget.icon,
+                      size: 40,
+                      color: colors.textMuted,
+                    ),
+                  ),
+                ),
+                // Subtle gradient overlay for optimal badge contrast
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.45, 1.0],
+                      colors: isDark
+                          ? [
+                              Colors.black.withValues(alpha: 0.20),
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.65),
+                            ]
+                          : [
+                              Colors.black.withValues(alpha: 0.12),
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.50),
+                            ],
+                    ),
+                  ),
+                ),
+                // Modality Badge (Bottom Left)
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(widget.icon, size: 12, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Text(
+                          widget.modality,
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        Widget contentWidget = Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 16 : 24,
+            vertical: isCompact ? 14 : 16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.name,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Availability Badge
+                  if (widget.isComingSoon)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE65100).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        border: Border.all(
+                          color: const Color(0xFFE65100).withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 11,
+                            color: Color(0xFFE65100),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'COMING SOON',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFE65100),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        border: Border.all(
+                          color: colors.primary.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 11,
+                            color: colors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ACTIVE AI',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: colors.primary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Text(
+                widget.subtitle,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isComingSoon ? colors.textMuted : colors.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.description,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: colors.textSecondary,
+                  height: 1.45,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        );
+
+        Widget actionWidget = Padding(
+          padding: EdgeInsets.only(
+            right: isCompact ? 16 : 24,
+            left: isCompact ? 16 : 12,
+            bottom: isCompact ? 16 : 0,
+          ),
+          child: widget.isComingSoon
+              ? Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    border: Border.all(color: colors.borderSubtle),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 14,
+                        color: colors.textMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Unavailable',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : AnimatedContainer(
+                  duration: const Duration(milliseconds: 140),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _isHovered ? colors.primary : colors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    border: Border.all(
+                      color: _isHovered ? colors.primary : colors.border,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Select Specialty',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: _isHovered
+                              ? colors.textOnPrimary
+                              : colors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
+                        color: _isHovered
+                            ? colors.textOnPrimary
+                            : colors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+        );
+
+        return MouseRegion(
+          cursor: isEnabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.forbidden,
+          onEnter: (_) {
+            if (isEnabled) setState(() => _isHovered = true);
+          },
+          onExit: (_) {
+            if (isEnabled) setState(() => _isHovered = false);
+          },
+          child: GestureDetector(
+            onTap: isEnabled ? widget.onTap : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              transform: Matrix4.translationValues(
+                0,
+                isEnabled && _isHovered ? -2 : 0,
+                0,
+              ),
+              decoration: BoxDecoration(
+                color: colors.surfaceLow,
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                border: Border.all(
+                  color: borderColor,
+                  width: isEnabled && _isHovered ? 1.5 : 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: isEnabled && _isHovered ? 16 : 4,
+                    offset: Offset(0, isEnabled && _isHovered ? 5 : 2),
+                    color: Colors.black.withValues(
+                      alpha: isDark
+                          ? (isEnabled && _isHovered ? 0.35 : 0.16)
+                          : (isEnabled && _isHovered ? 0.10 : 0.03),
+                    ),
+                  ),
+                ],
+              ),
+              child: isCompact
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        imagePanel,
+                        contentWidget,
+                        actionWidget,
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        imagePanel,
+                        Expanded(child: contentWidget),
+                        actionWidget,
+                      ],
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 // ── Data classes ──
 
 class _InstalledModelChoice {
@@ -1688,16 +2423,3 @@ class _InstalledModelChoice {
   });
 }
 
-class _SpecialtyInfo {
-  final String name;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const _SpecialtyInfo({
-    required this.name,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
-}

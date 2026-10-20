@@ -83,7 +83,7 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
 
             // ── Navigation indicator ──
             Positioned(
-              bottom: 24,
+              bottom: 18,
               left: 0,
               right: 0,
               child: _WorkspaceNavigationBar(
@@ -136,14 +136,22 @@ class _WorkspaceNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         decoration: BoxDecoration(
           color: colors.surfaceContainer,
-          borderRadius: BorderRadius.circular(WisteriaRadius.full),
+          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
           border: Border.all(color: colors.border),
-          boxShadow: WisteriaElevation.medium,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.06),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -199,33 +207,33 @@ class _NavSegmentState extends State<_NavSegment> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: widget.isActive
-                ? colors.primaryMuted.withValues(alpha: 0.9)
+                ? colors.primary
                 : _isHovered
                 ? colors.surfaceHigh
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(WisteriaRadius.full),
+            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 widget.icon,
-                size: 16,
+                size: 15,
                 color: widget.isActive
                     ? colors.textOnPrimary
                     : _isHovered
                     ? colors.textPrimary
                     : colors.textSecondary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12.5,
                   fontWeight: widget.isActive
                       ? FontWeight.w600
                       : FontWeight.w500,
