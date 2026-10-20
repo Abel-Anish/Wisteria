@@ -21,12 +21,12 @@ class SystemWorkspacePanel extends StatelessWidget {
       builder: (context, constraints) {
         final hasFiniteHeight = constraints.hasBoundedHeight;
         final availableHeight = hasFiniteHeight
-            ? constraints.maxHeight - 36 - 88 - 60 - 28 - 22
+            ? constraints.maxHeight - 36 - 80 - 60 - 28 - 22
             : 480.0;
-        final cardHeight = (availableHeight / 2).clamp(210.0, 250.0);
+        final cardHeight = (availableHeight / 2).clamp(210.0, double.infinity);
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(48, 36, 48, 88),
+          padding: const EdgeInsets.fromLTRB(48, 36, 48, 80),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1100),
