@@ -3,13 +3,15 @@ import 'package:flutter/services.dart';
 
 import '../../core/database/database.dart';
 import '../../core/theme/wisteria_theme.dart';
+import '../offline_model/offline_model_page.dart';
 import 'main_workspace_panel.dart';
 import 'system_workspace_panel.dart';
 
-/// Root two-panel horizontally sliding workspace.
+/// Root three-panel horizontally sliding workspace.
 ///
-/// Panel A: Main Workspace (Patients + AI Workplace)
-/// Panel B: Doctor & System Workspace (Profile, Settings, Models, Sync)
+/// Panel 0: Main Workspace (Patients + AI Workplace)
+/// Panel 1: Doctor & System Workspace (Profile, Settings, Models, Sync)
+/// Panel 2: Offline Model (Chat with local AI)
 class WorkspaceShell extends StatefulWidget {
   final WisteriaDatabase database;
 
@@ -22,6 +24,8 @@ class WorkspaceShell extends StatefulWidget {
 class _WorkspaceShellState extends State<WorkspaceShell> {
   late final PageController _pageController;
   int _currentPage = 0;
+
+  static const int _pageCount = 3;
 
   @override
   void initState() {
@@ -43,6 +47,16 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
     );
   }
 
+  void _goToPreviousPage() {
+    final prev = (_currentPage - 1 + _pageCount) % _pageCount;
+    _goToPage(prev);
+  }
+
+  void _goToNextPage() {
+    final next = (_currentPage + 1) % _pageCount;
+    _goToPage(next);
+  }
+
   void _onPageChanged(int page) {
     setState(() {
       _currentPage = page;
@@ -59,12 +73,10 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
         autofocus: true,
         onKeyEvent: (event) {
           if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.arrowRight &&
-                _currentPage == 0) {
-              _goToPage(1);
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft &&
-                _currentPage == 1) {
-              _goToPage(0);
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+              _goToNextPage();
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              _goToPreviousPage();
             }
           }
         },
@@ -78,10 +90,35 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
               children: [
                 MainWorkspacePanel(database: widget.database),
                 SystemWorkspacePanel(database: widget.database),
+                const WisChatPage(),
               ],
             ),
 
-            // ── Navigation indicator ──
+            // ── Floating left-edge interface-switching button ──
+            Positioned(
+              left: 18,
+              top: 0,
+              bottom: 0,
+              child: _FloatingEdgeButton(
+                icon: Icons.chevron_left_rounded,
+                tooltip: 'Previous interface',
+                onTap: _goToPreviousPage,
+              ),
+            ),
+
+            // ── Floating right-edge interface-switching button ──
+            Positioned(
+              right: 18,
+              top: 0,
+              bottom: 0,
+              child: _FloatingEdgeButton(
+                icon: Icons.chevron_right_rounded,
+                tooltip: 'Next interface',
+                onTap: _goToNextPage,
+              ),
+            ),
+
+            // ── Unified navigation bar (tabs only) ──
             Positioned(
               bottom: 18,
               left: 0,
@@ -92,30 +129,6 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
               ),
             ),
 
-            // ── Edge navigation arrows ──
-            if (_currentPage == 0)
-              Positioned(
-                right: 16,
-                top: 0,
-                bottom: 0,
-                child: _EdgeArrow(
-                  icon: Icons.chevron_right_rounded,
-                  tooltip: 'Doctor & System Workspace',
-                  onTap: () => _goToPage(1),
-                ),
-              ),
-
-            if (_currentPage == 1)
-              Positioned(
-                left: 16,
-                top: 0,
-                bottom: 0,
-                child: _EdgeArrow(
-                  icon: Icons.chevron_left_rounded,
-                  tooltip: 'Main Workspace',
-                  onTap: () => _goToPage(0),
-                ),
-              ),
           ],
         ),
       ),
@@ -123,7 +136,7 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
   }
 }
 
-/// Segmented navigation indicator at the bottom center.
+/// Bottom segmented navigation bar — tabs only, no arrows.
 class _WorkspaceNavigationBar extends StatelessWidget {
   final int currentPage;
   final void Function(int) onPageSelected;
@@ -169,7 +182,82 @@ class _WorkspaceNavigationBar extends StatelessWidget {
               isActive: currentPage == 1,
               onTap: () => onPageSelected(1),
             ),
+            const SizedBox(width: 4),
+            _NavSegment(
+              icon: Icons.psychology_rounded,
+              label: 'WisChat',
+              isActive: currentPage == 2,
+              onTap: () => onPageSelected(2),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating square interface-switching button that advances forward or backward.
+class _FloatingEdgeButton extends StatefulWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _FloatingEdgeButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  State<_FloatingEdgeButton> createState() => _FloatingEdgeButtonState();
+}
+
+class _FloatingEdgeButtonState extends State<_FloatingEdgeButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Tooltip(
+        message: widget.tooltip,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: _isHovered
+                    ? colors.primary.withValues(alpha: 0.14)
+                    : colors.surfaceContainer,
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                border: Border.all(
+                  color: _isHovered
+                      ? colors.primary.withValues(alpha: 0.5)
+                      : colors.border,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
+                  ),
+                ],
+              ),
+              child: Icon(
+                widget.icon,
+                size: 22,
+                color: _isHovered ? colors.primary : colors.textSecondary,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -245,67 +333,6 @@ class _NavSegmentState extends State<_NavSegment> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Subtle edge arrow button for panel navigation.
-class _EdgeArrow extends StatefulWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _EdgeArrow({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  State<_EdgeArrow> createState() => _EdgeArrowState();
-}
-
-class _EdgeArrowState extends State<_EdgeArrow> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = WisteriaColors.of(context);
-    return Center(
-      child: Tooltip(
-        message: widget.tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          child: GestureDetector(
-            onTap: widget.onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 36,
-              height: 72,
-              decoration: BoxDecoration(
-                color: _isHovered
-                    ? colors.primary.withValues(alpha: 0.12)
-                    : colors.surfaceLow.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(WisteriaRadius.md),
-                border: Border.all(
-                  color: _isHovered
-                      ? colors.primary.withValues(alpha: 0.3)
-                      : colors.border.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Icon(
-                widget.icon,
-                size: 24,
-                color: _isHovered
-                    ? colors.primary
-                    : colors.textMuted,
-              ),
-            ),
           ),
         ),
       ),

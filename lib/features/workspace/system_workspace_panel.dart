@@ -4,7 +4,6 @@ import '../../core/database/database.dart';
 import '../../core/theme/wisteria_theme.dart';
 import '../doctor/doctor_profile_page.dart';
 import '../models/medical_model_page.dart';
-import '../offline_model/offline_model_page.dart';
 import '../shared/placeholder_page.dart';
 import 'settings_page.dart';
 
@@ -20,21 +19,27 @@ class SystemWorkspacePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final hasFiniteHeight = constraints.hasBoundedHeight;
+        final availableHeight = hasFiniteHeight
+            ? constraints.maxHeight - 36 - 88 - 60 - 28 - 22
+            : 480.0;
+        final cardHeight = (availableHeight / 2).clamp(210.0, 250.0);
+
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(40, 36, 40, 76),
+          padding: const EdgeInsets.fromLTRB(48, 36, 48, 88),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1280),
+              constraints: const BoxConstraints(maxWidth: 1100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Header ──
                   _buildHeader(context),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
                   // ── System cards grid ──
-                  _buildGrid(context, constraints.maxWidth),
+                  _buildGrid(context, constraints.maxWidth, cardHeight),
                 ],
               ),
             ),
@@ -92,32 +97,7 @@ class SystemWorkspacePanel extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionLabel(String label, WisteriaColorPalette colors) {
-    return Row(
-      children: [
-        Container(
-          width: 3,
-          height: 11,
-          decoration: BoxDecoration(
-            color: colors.primary,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: colors.textMuted,
-            letterSpacing: 0.8,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGrid(BuildContext context, double maxWidth) {
+  Widget _buildGrid(BuildContext context, double maxWidth, double cardHeight) {
     final colors = WisteriaColors.of(context);
 
     final cards = [
@@ -149,15 +129,6 @@ class SystemWorkspacePanel extends StatelessWidget {
         onTap: () => _navigate(context, MedicalModelPage(database: database)),
       ),
       _SystemCard(
-        title: 'Offline Model',
-        subtitle: 'Chat with locally running AI models',
-        icon: Icons.psychology_rounded,
-        accentColor: colors.tertiary,
-        tintColor: colors.primary,
-        imagePath: 'assets/images/model.jpg',
-        onTap: () => _navigate(context, const OfflineModelPage()),
-      ),
-      _SystemCard(
         title: 'Sync',
         subtitle: 'Data synchronization across workstations',
         icon: Icons.sync_rounded,
@@ -175,86 +146,37 @@ class SystemWorkspacePanel extends StatelessWidget {
       ),
     ];
 
-    if (maxWidth < 720) {
+    if (maxWidth < 700) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionLabel('CLINICAL ADMINISTRATION', colors),
-          const SizedBox(height: 12),
-          SizedBox(height: 165, child: cards[0]),
-          const SizedBox(height: 14),
-          SizedBox(height: 165, child: cards[1]),
-          const SizedBox(height: 24),
-          _buildSectionLabel('AI & SYSTEM SERVICES', colors),
-          const SizedBox(height: 12),
-          SizedBox(height: 165, child: cards[2]),
-          const SizedBox(height: 14),
-          SizedBox(height: 165, child: cards[3]),
-          const SizedBox(height: 14),
-          SizedBox(height: 165, child: cards[4]),
-        ],
-      );
-    }
-
-    if (maxWidth < 1020) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionLabel('CLINICAL ADMINISTRATION', colors),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: SizedBox(height: 180, child: cards[0])),
-              const SizedBox(width: 20),
-              Expanded(child: SizedBox(height: 180, child: cards[1])),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildSectionLabel('AI & SYSTEM SERVICES', colors),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: SizedBox(height: 180, child: cards[2])),
-              const SizedBox(width: 20),
-              Expanded(child: SizedBox(height: 180, child: cards[3])),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: SizedBox(height: 180, child: cards[4])),
-              const SizedBox(width: 20),
-              const Expanded(child: SizedBox.shrink()),
-            ],
-          ),
+          SizedBox(height: 180, child: cards[0]),
+          const SizedBox(height: 16),
+          SizedBox(height: 180, child: cards[1]),
+          const SizedBox(height: 16),
+          SizedBox(height: 180, child: cards[2]),
+          const SizedBox(height: 16),
+          SizedBox(height: 180, child: cards[3]),
         ],
       );
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Row 1: Clinical Administration
-        _buildSectionLabel('CLINICAL ADMINISTRATION', colors),
-        const SizedBox(height: 12),
+        // Row 1: Doctor Profile (left), Settings (right)
         Row(
           children: [
-            Expanded(child: SizedBox(height: 180, child: cards[0])),
+            Expanded(child: SizedBox(height: cardHeight, child: cards[0])),
             const SizedBox(width: 22),
-            Expanded(child: SizedBox(height: 180, child: cards[1])),
+            Expanded(child: SizedBox(height: cardHeight, child: cards[1])),
           ],
         ),
-        const SizedBox(height: 26),
-        // Row 2: AI & System Services
-        _buildSectionLabel('AI & SYSTEM SERVICES', colors),
-        const SizedBox(height: 12),
+        const SizedBox(height: 22),
+        // Row 2: Models (left), Sync (right)
         Row(
           children: [
-            Expanded(child: SizedBox(height: 180, child: cards[2])),
+            Expanded(child: SizedBox(height: cardHeight, child: cards[2])),
             const SizedBox(width: 22),
-            Expanded(child: SizedBox(height: 180, child: cards[3])),
-            const SizedBox(width: 22),
-            Expanded(child: SizedBox(height: 180, child: cards[4])),
+            Expanded(child: SizedBox(height: cardHeight, child: cards[3])),
           ],
         ),
       ],
@@ -514,8 +436,8 @@ class _SystemCardState extends State<_SystemCard>
                       // Foreground card content
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 18,
+                          horizontal: 24,
+                          vertical: 22,
                         ),
                         child: child,
                       ),
@@ -538,7 +460,7 @@ class _SystemCardState extends State<_SystemCard>
                     child: Text(
                       widget.title,
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: colors.textPrimary,
                         letterSpacing: -0.2,
@@ -549,7 +471,7 @@ class _SystemCardState extends State<_SystemCard>
                   ),
                   Icon(
                     Icons.arrow_forward_rounded,
-                    size: 15,
+                    size: 16,
                     color: _isHovered
                         ? widget.accentColor
                         : colors.textMuted.withValues(alpha: 0.35),
@@ -557,12 +479,12 @@ class _SystemCardState extends State<_SystemCard>
                 ],
               ),
 
-              const SizedBox(height: 5),
+              const SizedBox(height: 6),
 
               Text(
                 widget.subtitle,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 13,
                   fontWeight: FontWeight.w400,
                   color: colors.textSecondary,
                   height: 1.35,
