@@ -20,53 +20,57 @@ A doctor-centric desktop application for patient records, medical imaging, and A
 
  ## Overview
 
-**Wisteria** is an offline-first, doctor-centric clinical desktop application designed to bring patient information, medical records, medical imaging, and AI-assisted analysis into one workspace.
+**Wisteria** is an offline-first, doctor-centric clinical desktop application for managing patient records, examinations, medical images, and locally run AI workflows.
 
-Built with Flutter, Wisteria aims to support clinicians in managing patient information and accessing locally available AI models without requiring continuous internet connectivity for core offline workflows.
+Built with Flutter, Wisteria stores clinical records locally and offers two local AI workflows: image classification with bundled ONNX models and conversational assistance through a locally running Ollama service. Ollama and its selected model must be installed separately to use WisChat.
 
-The application combines local data management with a modular design that can support different medical analysis workflows. AI-generated findings are intended to assist clinical review rather than replace a healthcare professional's judgement.
+AI-generated findings are intended to support clinical review, not to diagnose, prescribe, or replace a healthcare professional's judgement.
 
  ## Key Features
 
 | Feature | Description |
 |---|---|
- | Doctor Profile | Manage doctor profile and professional or clinic information. |
- | New Patient | Register patient information and create patient records. |
- | Registered Patients | Browse and manage existing patient records. |
- | Medical AI Models | Access the application's locally available AI models and related functionality. |
- | Medical Imaging | Support medical-image workflows for compatible image formats and analysis models. |
- | Settings | Configure available application preferences, including the visual theme. |
- | Synchronization | Provide a dedicated area for data synchronization functionality. |
- | Local Data Management | Use SQLite with Drift for structured local data storage. |
- | Offline-First Workflows | Support core workflows locally where the required data and models are installed. |
+ | Patient records | Register, search, view, and edit patient demographic and clinical-history information. |
+ | Examinations | Create examinations, add doctor notes and medical images, and review saved examination details. |
+ | Local image classification | Run the bundled Pneumonia ResNet18 model on chest X-rays and Brain Tumor ResNet18 model on brain MRI images using ONNX Runtime. |
+ | WisChat | Chat with a local Gemma 3 4B model through Ollama, with streamed responses, Markdown rendering, conversation history, saved memories, and draft persistence. |
+ | Doctor profile and documents | Maintain professional and clinic details and view a saved doctor document. |
+ | Models | View the preinstalled medical-model catalog and test supported image inference. |
+ | Settings and themes | Switch between light and dark themes and view application/runtime information. |
+ | Local data | Store clinical records in SQLite via Drift; WisChat conversations, memories, and drafts are stored separately in local application-support files. |
+ | Synchronization | A Sync entry is visible in the interface, but synchronization is currently a placeholder and is not implemented. |
 
-> **Development note:** Wisteria is an academic project under active development. The availability of individual features depends on their current implementation.
+ > **Development note:** Wisteria is an academic project under active development. Eye and vision analysis is marked as coming soon; it is not currently a supported inference workflow.
 
  ## Interface Preview
 
-Wisteria uses a clean, desktop-first interface designed around rectangular image cards, clear typography, and minimal navigation.
+Wisteria uses a desktop-first interface with three horizontally navigable work areas.
 
- ### Workspace
+### Workspace
 
-The Workspace screen provides quick access to the two primary patient actions:
+The Workspace screen provides quick access to:
 
 - **New Patient** — register a new patient record.
-- **Registered Patients** — browse and search the patient directory.
+- **Registered Patients** — browse, search, and open patient records, including their examination history.
 
- ### Doctor & System
+### Doctor & System
 
-A dedicated section groups the supporting application areas:
+A dedicated area groups the supporting application pages:
 
 - Doctor Profile
 - Settings
 - Models
-- Synchronization
+- Sync (placeholder)
 
- ### Light and Dark Themes
+### WisChat
 
-Wisteria supports a dark clinical interface and a light interface with a softer, neutral background.
+WisChat is available as the third workspace tab. It sends chat requests to the local Ollama endpoint (`http://localhost:11434`) using `gemma3:4b` by default. Responses stream into the conversation and support Markdown formatting. Users can start and revisit conversations, save short memory items for inclusion in future prompts, and retain an unsent draft.
 
-Both themes share the same layout, with carefully balanced colours and contrast to keep labels, descriptions, and actions readable.
+WisChat requires Ollama to be running with the configured model available. The app does not bundle the Gemma model; its initial download requires an internet connection.
+
+### Light and Dark Themes
+
+Wisteria supports a dark clinical interface (the default) and a light interface. Both themes share the same layout and use theme-aware colours for readable labels, descriptions, and actions.
 
  ## Design System
 
@@ -77,31 +81,30 @@ Wisteria uses a restrained clinical colour palette with navy surfaces, rose-pink
 | Colour | Hex | Usage |
 |---|---|---|
  | Deep Navy | `#111923` | Main application background |
- | Dark Surface | `#1C2934` | Navigation and supporting surfaces |
- | Rose Pink | `#C96A83` | Primary highlights and selected actions |
- | Teal Blue | `#0796AF` | Secondary actions and informational highlights |
+ | Dark Surface | `#1A2632` | Content surfaces |
+ | Rose Pink | `#C998A2` | Accent and tint |
+ | Teal Blue | `#098FA6` | Primary actions and informational highlights |
  | Soft White | `#F1F5F7` | Primary text |
- | Muted Blue-Gray | `#A6B5C1` | Secondary text |
+ | Muted Blue-Gray | `#A6B5C0` | Secondary text |
 
 ### Light Mode
 
 | Colour | Hex | Usage |
 |---|---|---|
- | Soft Off-White | `#F1F5F5` | Main application background |
+ | Soft Off-White | `#F0F5F6` | Main application background |
  | White Surface | `#FFFFFF` | Cards and content surfaces |
- | Rose Pink | `#C96A83` | Primary highlights and selected actions |
- | Teal Blue | `#0796AF` | Secondary actions and informational highlights |
- | Dark Navy | `#202B35` | Primary text |
- | Muted Blue-Gray | `#718493` | Secondary text |
+ | Rose Pink | `#C998A2` | Accent and tint |
+ | Teal Blue | `#098FA6` | Primary actions and informational highlights |
+ | Dark Navy | `#1E293B` | Primary text |
+ | Muted Blue-Gray | `#5A6E7C` | Secondary text |
 
-*These values document the intended visual palette and should be aligned with the final theme constants in the Flutter code.*
+ *Palette values are defined in `lib/core/theme/wisteria_theme.dart`.*
 
 ### Design Principles
 
- - Clear navigation without a sidebar.
+ - Clear navigation between the three workspace areas.
  - Relevant photographic assets for key sections.
- - Rectangular cards with restrained borders and shadows.
- - Readable text and action labels over image backgrounds.
+ - Image-backed cards and restrained borders.
  - Consistent layouts across light and dark modes.
  - Minimal visual clutter, with colour used to establish hierarchy.
 
@@ -113,61 +116,56 @@ Wisteria uses a restrained clinical colour palette with navy surfaces, rose-pink
 | [Dart](https://dart.dev/) | Application programming language |
 | [Drift](https://drift.simonbinder.eu/) | Typed database access and data management |
 | [SQLite](https://sqlite.org/) | Local relational database |
-| [ONNX Runtime](https://onnxruntime.ai/) | Local inference for compatible ONNX models |
-| [PyTorch](https://pytorch.org/) | Model development and preparation workflows |
+| [ONNX Runtime](https://onnxruntime.ai/) | Local inference for the bundled image-classification models |
+| [Ollama](https://ollama.com/) | Local LLM service used by WisChat |
+| [flutter_markdown](https://pub.dev/packages/flutter_markdown) | Markdown rendering in WisChat |
+| [PyTorch](https://pytorch.org/) | Model-development notebook workflow (not used for in-app inference) |
 | [Git](https://git-scm.com/) | Version control |
 | [GitHub](https://github.com/) | Source-code hosting and collaboration |
 
  ## Architecture Overview
 
-The application follows a modular approach that separates the user interface, data access, local storage, and AI-related functionality.
+The application separates the user interface, local data access, file storage, and AI services. Clinical records are managed through Drift and SQLite. WisChat uses Ollama on the local machine, while medical-image classification uses the bundled ONNX models.
 
 ```mermaid
 flowchart TD
-    A[Wisteria Desktop Application] --> B[Workspace]
+    A[Wisteria Flutter Application] --> B[Workspace]
     A --> C[Doctor and System]
-    B --> D[Patient Registration]
-    B --> E[Registered Patients]
+    A --> D[WisChat]
+    B --> E[Patients and Examinations]
     C --> F[Doctor Profile and Settings]
-    C --> G[Models and Synchronization]
-    D --> H[Local Data Layer]
-    E --> H
-    H --> I[(SQLite Database)]
-    G --> J[Local AI Inference]
+    C --> G[Model Catalog]
+    E --> H[Drift Data Layer]
+    H --> I[(Local SQLite)]
+    E --> J[Medical Image Storage]
+    G --> K[ONNX Runtime]
+    K --> L[Bundled ONNX Models]
+    D --> M[Local Ollama Service]
+    D --> N[Local WisChat Files]
+    C -. Sync is a placeholder .-> O[Not implemented]
 ```
-
-*This diagram represents the high-level application concept, not a guarantee that every connection shown is fully implemented.*
 
  ## Project Structure
 
-The following is a guide to the main project assets and configuration files.
+Key repository folders and files:
 
 ```text
 Wisteria/
 ├── assets/
-│   ├── wisteria_banner.png
-│   ├── patients.jpg
-│   ├── new_patients.jpg
-│   ├── registered_patients.jpg
-│   ├── doctor.jpg
-│   ├── ai_workplace.jpg
-│   ├── model.jpg
-│   ├── settings.jpg
-│   ├── sync.jpg
+│   ├── images/
 │   └── models/
-│       └── pneumonia_resnet18.onnx
+│       ├── brain_tumor_resnet18.onnx
+│       ├── pneumonia_resnet18.onnx
+│       └── Wisteria - Brain Tumor ResNet18.ipynb
 ├── lib/
-│   └── Application source code
+│   ├── core/       # Database, services, models, storage, and theme
+│   └── features/   # Patient, examination, model, WisChat, and workspace UI
 ├── test/
-│   └── Automated tests
-├── windows/
-│   └── Windows desktop runner
+├── android/ ios/ linux/ macos/ web/ windows/
 ├── pubspec.yaml
 ├── pubspec.lock
 └── README.md
 ```
-
-**Note:** The asset names above describe the intended structure. Keep only the filenames that actually exist in your repository, and retain any additional existing assets and source folders. The ONNX model belongs in `assets/models/` and should not be moved or renamed without updating its references in the code.
 
  ## Getting Started
 
@@ -179,7 +177,7 @@ For Windows desktop development, install:
 - [Git](https://git-scm.com/downloads)
 - [Visual Studio](https://visualstudio.microsoft.com/) with the **Desktop development with C++** workload
 
-> Android Studio and the Android SDK are not required just to run the Windows desktop version.
+Android Studio and the Android SDK are not required to run the Windows desktop version. WisChat additionally requires [Ollama](https://ollama.com/) and the `gemma3:4b` model; these are separate from the Flutter app.
 
 ### 1. Clone the Repository
 
@@ -208,9 +206,33 @@ flutter pub get
 flutter run -d windows
 ```
 
-### 5. Optional: Regenerate Database Code
+### 5. Set up WisChat (Optional)
 
-Only when database definitions or other generated files need updating, run:
+Install Ollama, then download the model used by WisChat:
+
+```bash
+ollama pull gemma3:4b
+```
+
+Make sure Ollama is running locally, then open the **WisChat** workspace tab. The model download is only needed once; subsequent chat requests are sent to the local Ollama service.
+
+### 6. Run Tests
+
+Run the Flutter widget tests:
+
+```bash
+flutter test test/widget_test.dart
+```
+
+The Ollama verification test uses a live local service and the `gemma3:4b` model:
+
+```bash
+flutter test test/offline_model_verification_test.dart
+```
+
+### 7. Optional: Regenerate Database Code
+
+When database definitions change, regenerate the Drift code with:
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
@@ -220,27 +242,27 @@ dart run build_runner build --delete-conflicting-outputs
 
 Wisteria uses SQLite with Drift to organise application data locally.
 
-The existing database implementation includes data areas such as:
+The Drift schema currently includes:
 
-- **DoctorProfiles** — doctor profile information.
-- **Patients** — patient records.
-- **MedicalImages** — medical-image metadata.
-- **MedicalModels** — information about available models.
-- **AiAnalyses** — AI analysis records.
-- **FinalReports** — report-related data.
+- Doctor profiles and patient records.
+- Previous medical information, medications, and test results.
+- Examinations, doctor notes, and medical-image metadata.
+- Medical models, versions, inference runs, results, and findings.
+- AI analysis, evidence, doctor-review, and final-report records.
+- A synchronization queue table; a functioning synchronization workflow is not yet implemented.
 
-The exact database schema and relationships are defined in the application source code.
+Medical image files are managed in local storage. WisChat persists conversations, memories, the active conversation, and drafts as files in the operating system's application-support directory; these are separate from the clinical SQLite database.
 
  ## Privacy and Offline-First Approach
 
-Wisteria is designed to support local clinical workflows without continuous internet access.
+Wisteria is designed to support local workflows without continuous internet access after required software and models are installed.
 
- - Core offline functionality can operate with the necessary local data and models available.
- - Patient data can be stored in the local database.
- - Compatible installed models can support local inference.
- - AI findings should be reviewed by a qualified healthcare professional.
+ - Patient and examination data are stored in the local SQLite database.
+ - Bundled ONNX models run image classification locally.
+ - WisChat sends prompts to a local Ollama service; installing Ollama and downloading its model initially requires a network connection.
+ - AI outputs should be independently reviewed by a qualified healthcare professional and must not be treated as a diagnosis.
 
-**Important:** Offline operation alone does not guarantee complete data security. Appropriate device security, access controls, backups, and protection of locally stored information remain important.
+**Important:** Offline operation does not by itself guarantee data security. Protect the device and its local files, use suitable access controls and backups, and do not use real patient data for testing or development.
 
  ## Contributing
 
@@ -259,7 +281,7 @@ Please avoid committing patient-identifiable information, credentials, API keys,
 
  ## License
 
-See the repository's `LICENSE` file for the applicable license terms.
+There is no `LICENSE` file in the repository at this time. License terms have not been specified; clarify them before redistributing or reusing the project.
 
 ---
 
