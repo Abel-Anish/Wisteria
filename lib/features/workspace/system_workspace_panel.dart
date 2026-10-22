@@ -262,8 +262,6 @@ class _SystemCardState extends State<_SystemCard>
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isRose = widget.tintColor == WisteriaColors.mutedRose;
-    final isPink = widget.tintColor == WisteriaColors.pink;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -281,7 +279,11 @@ class _SystemCardState extends State<_SystemCard>
           animation: _animation,
           builder: (context, child) {
             final t = _animation.value;
-            final hoverBorderColor = widget.accentColor.withValues(alpha: 0.65);
+            final isRose = widget.tintColor == WisteriaColors.mutedRose;
+            final isPink = widget.tintColor == WisteriaColors.pink;
+            final hoverBorderColor = isDark && !(isRose || isPink)
+                ? const Color(0xFF4D4D4D)
+                : widget.accentColor.withValues(alpha: 0.65);
             final borderColor = Color.lerp(
               colors.border,
               hoverBorderColor,
@@ -372,17 +374,17 @@ class _SystemCardState extends State<_SystemCard>
                                               ),
                                             ]
                                           : [
-                                              const Color(0xFF098FA6).withValues(
-                                                alpha: 0.08,
+                                              const Color(0xFF2D2D2D).withValues(
+                                                alpha: 0.10,
                                               ),
-                                              const Color(0xFF11222D).withValues(
-                                                alpha: 0.28,
+                                              const Color(0xFF1D1D1D).withValues(
+                                                alpha: 0.30,
                                               ),
-                                              const Color(0xFF13222E).withValues(
-                                                alpha: 0.55,
+                                              const Color(0xFF141414).withValues(
+                                                alpha: 0.60,
                                               ),
-                                              const Color(0xFF111923).withValues(
-                                                alpha: 0.80,
+                                              const Color(0xFF0D0D0D).withValues(
+                                                alpha: 0.85,
                                               ),
                                             ]))
                                   : (isRose
@@ -500,19 +502,25 @@ class _SystemCardState extends State<_SystemCard>
   }
 
   Widget _buildIcon(bool isDark) {
+    final isRose = widget.tintColor == WisteriaColors.mutedRose;
+    final isPink = widget.tintColor == WisteriaColors.pink;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: 44,
       height: 44,
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF192831).withValues(alpha: _isHovered ? 0.90 : 0.80)
+            ? ((isRose || isPink)
+                ? const Color(0xFF221A20).withValues(alpha: _isHovered ? 0.90 : 0.80)
+                : const Color(0xFF1D1D1D).withValues(alpha: _isHovered ? 0.95 : 0.85))
             : Colors.white.withValues(alpha: _isHovered ? 0.95 : 0.88),
         borderRadius: BorderRadius.circular(WisteriaRadius.md),
         border: Border.all(
-          color: _isHovered
-              ? widget.accentColor.withValues(alpha: 0.50)
-              : widget.accentColor.withValues(alpha: 0.25),
+          color: isDark && !(isRose || isPink)
+              ? (_isHovered ? const Color(0xFF666666) : const Color(0xFF333333))
+              : (_isHovered
+                  ? widget.accentColor.withValues(alpha: 0.50)
+                  : widget.accentColor.withValues(alpha: 0.25)),
           width: 1,
         ),
         boxShadow: [
@@ -526,7 +534,7 @@ class _SystemCardState extends State<_SystemCard>
       child: Icon(
         widget.icon,
         size: 20,
-        color: widget.accentColor,
+        color: isDark && !(isRose || isPink) ? Colors.white : widget.accentColor,
       ),
     );
   }

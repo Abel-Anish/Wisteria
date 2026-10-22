@@ -31,7 +31,7 @@ class WisteriaDatabase extends _$WisteriaDatabase {
     : super(executor ?? driftDatabase(name: 'wisteria_v2'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -46,6 +46,10 @@ class WisteriaDatabase extends _$WisteriaDatabase {
           await m.addColumn(doctorProfiles, doctorProfiles.documentPath);
 
           await m.addColumn(doctorProfiles, doctorProfiles.documentFileName);
+        }
+
+        if (from < 3) {
+          await m.addColumn(patients, patients.gender);
         }
       },
     );

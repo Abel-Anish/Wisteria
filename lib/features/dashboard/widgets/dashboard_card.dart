@@ -81,6 +81,7 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = widget.data.accentColor ?? colors.primary;
 
     return MouseRegion(
@@ -103,20 +104,32 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
                       ? LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            accent.withValues(alpha: 0.12),
-                            colors.surfaceLow,
-                            colors.surfaceLow,
-                          ],
+                          colors: isDark
+                              ? [
+                                  colors.surfaceHighest.withValues(alpha: 0.25),
+                                  colors.surfaceLow,
+                                  colors.surfaceLow,
+                                ]
+                              : [
+                                  accent.withValues(alpha: 0.12),
+                                  colors.surfaceLow,
+                                  colors.surfaceLow,
+                                ],
                         )
                       : colors.cardGradient,
                   borderRadius: BorderRadius.circular(WisteriaRadius.lg),
                   border: Border.all(
-                    color: _isHovered
-                        ? accent.withValues(alpha: 0.5)
-                        : widget.data.isHero
-                        ? accent.withValues(alpha: 0.2)
-                        : colors.border,
+                    color: isDark
+                        ? (_isHovered
+                            ? const Color(0xFF4D4D4D)
+                            : widget.data.isHero
+                            ? const Color(0xFF333333)
+                            : colors.border)
+                        : (_isHovered
+                            ? accent.withValues(alpha: 0.5)
+                            : widget.data.isHero
+                            ? accent.withValues(alpha: 0.2)
+                            : colors.border),
                     width: 1,
                   ),
                   boxShadow: [
@@ -131,11 +144,13 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
                         blurRadius: 24 + (8 * t),
                         spreadRadius: -4,
                         offset: Offset(0, 4 + (4 * t)),
-                        color: accent.withValues(
-                          alpha: widget.data.isHero
-                              ? 0.08 + (0.1 * t)
-                              : 0.05 * t,
-                        ),
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.20 * t)
+                            : accent.withValues(
+                                alpha: widget.data.isHero
+                                    ? 0.08 + (0.1 * t)
+                                    : 0.05 * t,
+                              ),
                       ),
                   ],
                 ),
@@ -147,7 +162,7 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Icon container
-              _buildIconContainer(accent),
+              _buildIconContainer(accent, isDark),
 
               const Spacer(),
 
@@ -158,7 +173,7 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
-                    color: accent,
+                    color: isDark ? Colors.white : accent,
                     letterSpacing: -0.5,
                     height: 1,
                   ),
@@ -208,20 +223,24 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
     );
   }
 
-  Widget _buildIconContainer(Color accent) {
+  Widget _buildIconContainer(Color accent, bool isDark) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: widget.data.isHero ? 56 : 48,
       height: widget.data.isHero ? 56 : 48,
       decoration: BoxDecoration(
-        color: _isHovered
-            ? accent.withValues(alpha: 0.18)
-            : accent.withValues(alpha: 0.10),
+        color: isDark
+            ? (_isHovered ? const Color(0xFF4D4D4D) : const Color(0xFF2D2D2D))
+            : (_isHovered
+                ? accent.withValues(alpha: 0.18)
+                : accent.withValues(alpha: 0.10)),
         borderRadius: BorderRadius.circular(WisteriaRadius.md),
         border: Border.all(
-          color: _isHovered
-              ? accent.withValues(alpha: 0.3)
-              : Colors.transparent,
+          color: isDark
+              ? (_isHovered ? const Color(0xFF666666) : const Color(0xFF333333))
+              : (_isHovered
+                  ? accent.withValues(alpha: 0.3)
+                  : Colors.transparent),
           width: 1,
         ),
       ),
@@ -229,7 +248,9 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
         duration: const Duration(milliseconds: 200),
         child: Icon(
           widget.data.icon,
-          color: _isHovered ? accent : accent.withValues(alpha: 0.8),
+          color: isDark
+              ? Colors.white
+              : (_isHovered ? accent : accent.withValues(alpha: 0.8)),
           size: widget.data.isHero ? 28 : 24,
         ),
       ),

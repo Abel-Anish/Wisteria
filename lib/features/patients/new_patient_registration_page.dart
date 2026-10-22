@@ -38,8 +38,11 @@ class _NewPatientRegistrationPageState
   final _addressFocusNode = FocusNode();
 
   String? _selectedBloodGroup;
+  String? _selectedGender;
   bool _isSubmitting = false;
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
+
+  static const List<String> _genders = ['Male', 'Female', 'Other'];
 
   static const List<String> _bloodGroups = [
     'A+',
@@ -150,6 +153,7 @@ class _NewPatientRegistrationPageState
         phoneNumber: phone,
         age: age,
         bloodGroup: bloodGroup,
+        gender: _selectedGender,
         otherContact: otherContact,
         address: address,
       );
@@ -227,7 +231,7 @@ class _NewPatientRegistrationPageState
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
-                  vertical: 36,
+                  vertical: 18,
                 ),
                 child: Center(
                   child: ConstrainedBox(
@@ -242,17 +246,21 @@ class _NewPatientRegistrationPageState
                               width: 52,
                               height: 52,
                               decoration: BoxDecoration(
-                                color: colors.primary.withValues(alpha: 0.10),
+                                color: isDark
+                                    ? Colors.transparent
+                                    : colors.primary.withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(
                                   WisteriaRadius.sm,
                                 ),
-                                border: Border.all(
-                                  color: colors.primary.withValues(alpha: 0.18),
-                                ),
+                                border: isDark
+                                    ? null
+                                    : Border.all(
+                                        color: colors.primary.withValues(alpha: 0.18),
+                                      ),
                               ),
                               child: Icon(
                                 Icons.person_add_rounded,
-                                color: colors.primary,
+                                color: isDark ? Colors.white : colors.primary,
                                 size: 26,
                               ),
                             ),
@@ -284,11 +292,11 @@ class _NewPatientRegistrationPageState
                           ],
                         ),
 
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 18),
 
                         // Form Card (Sharp Geometry)
                         Container(
-                          padding: const EdgeInsets.all(32),
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
                           decoration: BoxDecoration(
                             color: colors.surfaceLow,
                             borderRadius: BorderRadius.circular(
@@ -334,7 +342,7 @@ class _NewPatientRegistrationPageState
                                   },
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 14),
 
                                 // Row: Phone & Age (Mandatory)
                                 Row(
@@ -434,14 +442,13 @@ class _NewPatientRegistrationPageState
                                   ],
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 14),
 
-                                // Row: Blood Group & Other Contact (Mandatory)
+                                // Row: Blood Group & Gender
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
-                                      flex: 2,
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -455,6 +462,7 @@ class _NewPatientRegistrationPageState
                                             key: const Key('blood_group_field'),
                                             focusNode: _bloodGroupFocusNode,
                                             initialValue: _selectedBloodGroup,
+                                            isExpanded: true,
                                             dropdownColor: colors.surfaceLow,
                                             style: TextStyle(
                                               color: colors.textPrimary,
@@ -494,59 +502,40 @@ class _NewPatientRegistrationPageState
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      flex: 3,
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           _buildFieldLabel(
-                                            'Other Contact',
-                                            isRequired: true,
+                                            'Gender',
                                           ),
                                           const SizedBox(height: 6),
-                                          TextFormField(
-                                            key: const Key(
-                                              'other_contact_field',
-                                            ),
-                                            controller: _otherContactController,
-                                            focusNode: _otherContactFocusNode,
+                                          DropdownButtonFormField<String>(
+                                            key: const Key('gender_field'),
+                                            initialValue: _selectedGender,
+                                            isExpanded: true,
+                                            dropdownColor: colors.surfaceLow,
                                             style: TextStyle(
                                               color: colors.textPrimary,
+                                              fontSize: 14,
+                                              fontFamily: 'Inter',
                                             ),
                                             decoration: _buildInputDecoration(
-                                              hint:
-                                                  'Email or emergency contact',
-                                              icon:
-                                                  Icons.alternate_email_rounded,
+                                              hint: 'Select gender',
+                                              icon: Icons.wc_rounded,
                                             ),
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return 'Other contact is required.';
-                                              }
-                                              final trimmed = value.trim();
-                                              final emailRegex = RegExp(
-                                                r'^[\w\.-]+@[\w\.-]+\.\w+$',
-                                              );
-                                              final phoneRegex = RegExp(
-                                                r'^\+?[0-9\s\-()]{7,15}$',
-                                              );
-                                              final digitCount = RegExp(
-                                                r'\d',
-                                              ).allMatches(trimmed).length;
-
-                                              final isEmail = emailRegex
-                                                  .hasMatch(trimmed);
-                                              final isPhone =
-                                                  phoneRegex.hasMatch(
-                                                    trimmed,
-                                                  ) &&
-                                                  digitCount >= 7;
-
-                                              if (!isEmail && !isPhone) {
-                                                return 'Enter a valid email or emergency contact.';
-                                              }
-                                              return null;
+                                            items: _genders
+                                                .map(
+                                                  (g) => DropdownMenuItem(
+                                                    value: g,
+                                                    child: Text(g),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (val) {
+                                              setState(() {
+                                                _selectedGender = val;
+                                              });
                                             },
                                           ),
                                         ],
@@ -555,7 +544,53 @@ class _NewPatientRegistrationPageState
                                   ],
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 14),
+
+                                // Field: Other Contact (Mandatory)
+                                _buildFieldLabel(
+                                  'Other Contact',
+                                  isRequired: true,
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  key: const Key('other_contact_field'),
+                                  controller: _otherContactController,
+                                  focusNode: _otherContactFocusNode,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
+                                  ),
+                                  decoration: _buildInputDecoration(
+                                    hint: 'Email or emergency contact',
+                                    icon: Icons.alternate_email_rounded,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Other contact is required.';
+                                    }
+                                    final trimmed = value.trim();
+                                    final emailRegex = RegExp(
+                                      r'^[\w\.-]+@[\w\.-]+\.\w+$',
+                                    );
+                                    final phoneRegex = RegExp(
+                                      r'^\+?[0-9\s\-()]{7,15}$',
+                                    );
+                                    final digitCount = RegExp(
+                                      r'\d',
+                                    ).allMatches(trimmed).length;
+
+                                    final isEmail = emailRegex.hasMatch(trimmed);
+                                    final isPhone =
+                                        phoneRegex.hasMatch(trimmed) &&
+                                        digitCount >= 7;
+
+                                    if (!isEmail && !isPhone) {
+                                      return 'Enter a valid email or emergency contact.';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 14),
 
                                 // Field: Contact Address (Mandatory)
                                 _buildFieldLabel(
@@ -583,7 +618,7 @@ class _NewPatientRegistrationPageState
                                   },
                                 ),
 
-                                const SizedBox(height: 36),
+                                const SizedBox(height: 20),
 
                                 // Action Buttons (Sharp Geometry)
                                 Row(

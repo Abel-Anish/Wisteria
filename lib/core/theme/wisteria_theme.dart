@@ -110,25 +110,25 @@ class WisteriaColors {
   // ── Preserved Dark Theme Palette ──
   static const WisteriaColorPalette darkPalette = WisteriaColorPalette(
     brightness: Brightness.dark,
-    background: Color(0xFF111923),
-    surfaceLowest: Color(0xFF0D141C),
-    surfaceLow: Color(0xFF15202A),
-    surface: Color(0xFF1A2632),
-    surfaceContainer: Color(0xFF1F2D3A),
-    surfaceHigh: Color(0xFF263746),
-    surfaceHighest: Color(0xFF2E4152),
+    background: Color(0xFF0D0D0D),
+    surfaceLowest: Color(0xFF141414),
+    surfaceLow: Color(0xFF1D1D1D),
+    surface: Color(0xFF3D3D3D),
+    surfaceContainer: Color(0xFF2D2D2D),
+    surfaceHigh: Color(0xFF3D3D3D),
+    surfaceHighest: Color(0xFF4D4D4D),
     primary: Color(0xFF098FA6),
     primaryMuted: Color(0xFF07788C),
     secondary: Color(0xFF0D9488),
     tertiary: Color(0xFF2DD4BF),
-    primaryContainer: Color(0xFF123942),
-    textPrimary: Color(0xFFF1F5F7),
-    textSecondary: Color(0xFFA6B5C0),
-    textMuted: Color(0xFF6F818D),
+    primaryContainer: Color(0xFF1D2628),
+    textPrimary: Color(0xFFFFFFFF),
+    textSecondary: Color(0xFFCCCCCC),
+    textMuted: Color(0xFF8E8E8E),
     textOnPrimary: Color(0xFFFFFFFF),
-    border: Color(0xFF2B3B48),
-    borderSubtle: Color(0xFF1F2C37),
-    borderFocus: Color(0xFF098FA6),
+    border: Color(0xFF333333),
+    borderSubtle: Color(0xFF222222),
+    borderFocus: Color(0xFF6E6E6E),
     success: Color(0xFF34D399),
     warning: Color(0xFFFBBF24),
     error: Color(0xFFEF4444),
@@ -139,7 +139,7 @@ class WisteriaColors {
     cardGradient: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF202E3B), Color(0xFF1A2632)],
+      colors: [Color(0xFF3D3D3D), Color(0xFF353535)],
     ),
     accentGradient: LinearGradient(
       begin: Alignment.topLeft,
@@ -149,7 +149,7 @@ class WisteriaColors {
     heroGradient: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF15222C), Color(0xFF192733), Color(0xFF111923)],
+      colors: [Color(0xFF2D2D2D), Color(0xFF1D1D1D), Color(0xFF0D0D0D)],
     ),
   );
 
@@ -210,28 +210,28 @@ class WisteriaColors {
       WisteriaThemeController.currentPalette;
 
   // ── Backward-compatible compile-time constants (Dark theme baseline) ──
-  static const Color background = Color(0xFF111923);
-  static const Color surfaceLowest = Color(0xFF0D141C);
-  static const Color surfaceLow = Color(0xFF15202A);
-  static const Color surface = Color(0xFF1A2632);
-  static const Color surfaceContainer = Color(0xFF1F2D3A);
-  static const Color surfaceHigh = Color(0xFF263746);
-  static const Color surfaceHighest = Color(0xFF2E4152);
+  static const Color background = Color(0xFF0D0D0D);
+  static const Color surfaceLowest = Color(0xFF141414);
+  static const Color surfaceLow = Color(0xFF1D1D1D);
+  static const Color surface = Color(0xFF3D3D3D);
+  static const Color surfaceContainer = Color(0xFF2D2D2D);
+  static const Color surfaceHigh = Color(0xFF3D3D3D);
+  static const Color surfaceHighest = Color(0xFF4D4D4D);
 
   static const Color primary = Color(0xFF098FA6);
   static const Color primaryMuted = Color(0xFF07788C);
   static const Color secondary = Color(0xFF0D9488);
   static const Color tertiary = Color(0xFF2DD4BF);
-  static const Color primaryContainer = Color(0xFF123942);
+  static const Color primaryContainer = Color(0xFF1D2628);
 
-  static const Color textPrimary = Color(0xFFF1F5F7);
-  static const Color textSecondary = Color(0xFFA6B5C0);
-  static const Color textMuted = Color(0xFF6F818D);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFCCCCCC);
+  static const Color textMuted = Color(0xFF8E8E8E);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
-  static const Color border = Color(0xFF2B3B48);
-  static const Color borderSubtle = Color(0xFF1F2C37);
-  static const Color borderFocus = Color(0xFF098FA6);
+  static const Color border = Color(0xFF333333);
+  static const Color borderSubtle = Color(0xFF222222);
+  static const Color borderFocus = Color(0xFF6E6E6E);
 
   static const Color success = Color(0xFF34D399);
   static const Color warning = Color(0xFFFBBF24);
@@ -241,7 +241,7 @@ class WisteriaColors {
   static const LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF202E3B), Color(0xFF1A2632)],
+    colors: [Color(0xFF3D3D3D), Color(0xFF353535)],
   );
 
   static const LinearGradient accentGradient = LinearGradient(
@@ -253,7 +253,7 @@ class WisteriaColors {
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF15222C), Color(0xFF192733), Color(0xFF111923)],
+    colors: [Color(0xFF2D2D2D), Color(0xFF1D1D1D), Color(0xFF0D0D0D)],
   );
 }
 
@@ -485,7 +485,7 @@ ThemeData buildWisteriaTheme({Brightness brightness = Brightness.dark}) {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-        borderSide: BorderSide(color: palette.primary, width: 1.5),
+        borderSide: BorderSide(color: palette.borderFocus, width: 1.5),
       ),
       labelStyle: TextStyle(
         color: palette.textSecondary,

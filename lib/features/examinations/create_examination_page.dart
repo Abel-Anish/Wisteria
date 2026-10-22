@@ -582,7 +582,9 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 Icon(
                   Icons.person_outline_rounded,
                   size: 15,
-                  color: colors.primary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : colors.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -604,6 +606,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   // ── Stage 0: Specialty Selection ──
 
   Widget _buildSpecialtySelection(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cards = [
       _SpecialtyCard(
         name: 'Cardiology',
@@ -661,15 +664,19 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.12),
+                color: isDark
+                    ? Colors.transparent
+                    : colors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                border: Border.all(
-                  color: colors.primary.withValues(alpha: 0.25),
-                ),
+                border: isDark
+                    ? null
+                    : Border.all(
+                        color: colors.primary.withValues(alpha: 0.25),
+                      ),
               ),
               child: Icon(
                 Icons.biotech_rounded,
-                color: colors.primary,
+                color: isDark ? Colors.white : colors.primary,
                 size: 22,
               ),
             ),
@@ -810,6 +817,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     final specialtyAccent =
         isCardiology ? colors.primary : const Color(0xFF8E24AA);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -824,17 +832,21 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: specialtyAccent.withValues(alpha: 0.12),
+              color: isDark
+                  ? Colors.transparent
+                  : specialtyAccent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: Border.all(
-                color: specialtyAccent.withValues(alpha: 0.3),
-              ),
+              border: isDark
+                  ? null
+                  : Border.all(
+                      color: specialtyAccent.withValues(alpha: 0.3),
+                    ),
             ),
             child: Icon(
               isCardiology
                   ? Icons.favorite_rounded
                   : Icons.psychology_rounded,
-              color: specialtyAccent,
+              color: isDark ? Colors.white : specialtyAccent,
               size: 20,
             ),
           ),
@@ -928,6 +940,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   // ── Stage A: Examination Setup & Medical Image Viewer ──
 
   Widget _buildStageA(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _buildSection(
       number: '1',
       title: 'Examination Setup',
@@ -945,7 +958,11 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           ),
           child: Row(
             children: [
-              Icon(Icons.person_outline_rounded, size: 16, color: colors.primary),
+              Icon(
+                Icons.person_outline_rounded,
+                size: 16,
+                color: isDark ? Colors.white : colors.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 widget.patientName,
@@ -976,7 +993,11 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         // Medical Image Section Header
         Row(
           children: [
-            Icon(Icons.image_outlined, size: 16, color: colors.primary),
+            Icon(
+              Icons.image_outlined,
+              size: 16,
+              color: isDark ? Colors.white : colors.primary,
+            ),
             const SizedBox(width: 8),
             Text(
               'Medical Image',
@@ -999,6 +1020,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   }
 
   Widget _buildImagePicker(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       borderRadius: BorderRadius.circular(WisteriaRadius.sm),
       onTap: _runningInference ? null : _pickImage,
@@ -1019,16 +1041,20 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.10),
+                color: isDark
+                    ? Colors.transparent
+                    : colors.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                border: Border.all(
-                  color: colors.primary.withValues(alpha: 0.25),
-                ),
+                border: isDark
+                    ? null
+                    : Border.all(
+                        color: colors.primary.withValues(alpha: 0.25),
+                      ),
               ),
               child: Icon(
                 Icons.add_photo_alternate_outlined,
                 size: 26,
-                color: colors.primary,
+                color: isDark ? Colors.white : colors.primary,
               ),
             ),
             const SizedBox(height: 14),
@@ -1139,7 +1165,9 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 Icon(
                   Icons.insert_drive_file_outlined,
                   size: 18,
-                  color: colors.primary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : colors.primary,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1197,6 +1225,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   // ── Clinical Disclaimer ──
 
   Widget _buildClinicalDisclaimer(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1211,7 +1240,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           Icon(
             Icons.verified_user_outlined,
             size: 20,
-            color: colors.primary,
+            color: isDark ? Colors.white : colors.primary,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1279,13 +1308,17 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.12),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.transparent
+                            : colors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                       ),
                       child: Icon(
                         Icons.developer_board_rounded,
                         size: 20,
-                        color: colors.primary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : colors.primary,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -1722,6 +1755,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   }
 
   Widget _buildAILabel(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -1735,7 +1769,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           Icon(
             Icons.auto_awesome_outlined,
             size: 13,
-            color: colors.primary,
+            color: isDark ? Colors.white : colors.primary,
           ),
           const SizedBox(width: 6),
           Text(
@@ -1867,6 +1901,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     required WisteriaColorPalette colors,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -1884,11 +1919,15 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 width: 26,
                 height: 26,
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.12),
+                  color: isDark
+                      ? Colors.transparent
+                      : colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.25),
-                  ),
+                  border: isDark
+                      ? null
+                      : Border.all(
+                          color: colors.primary.withValues(alpha: 0.25),
+                        ),
                 ),
                 child: Center(
                   child: Text(
@@ -1896,7 +1935,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: colors.primary,
+                      color: isDark ? Colors.white : colors.primary,
                     ),
                   ),
                 ),
@@ -1905,7 +1944,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
               Icon(
                 icon,
                 size: 18,
-                color: colors.primary,
+                color: isDark ? Colors.white : colors.primary,
               ),
               const SizedBox(width: 8),
               Text(
@@ -2052,7 +2091,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
     final isEnabled = !widget.isComingSoon && widget.onTap != null;
 
     final borderColor = isEnabled && _isHovered
-        ? colors.primary.withValues(alpha: 0.75)
+        ? (isDark ? const Color(0xFF4D4D4D) : colors.primary.withValues(alpha: 0.75))
         : colors.border;
 
     return LayoutBuilder(
@@ -2076,7 +2115,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               children: [
                 Container(
                   color: isDark
-                      ? const Color(0xFF0D131A)
+                      ? const Color(0xFF1D1D1D)
                       : colors.surfaceContainer,
                 ),
                 Image.asset(

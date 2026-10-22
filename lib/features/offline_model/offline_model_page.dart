@@ -292,14 +292,49 @@ class _WisChatPageState extends State<WisChatPage>
 
     // 2. Build request payload from saved memories + conversation history
     final payload = <Map<String, String>>[];
+
+    // Always inject the WisChat medical personality system prompt.
+    final systemBuffer = StringBuffer();
+    systemBuffer.write(
+      'You are WisChat, a compassionate and knowledgeable offline medical AI assistant '
+      'built into the Wisteria clinical platform. You run entirely on-device via a local '
+      'Gemma model — no data ever leaves this machine, making you safe for use with '
+      'patient information.\n\n'
+      '## Your Personality\n'
+      '- Empathetic & calm: Speak with warmth and clarity, never alarming the user unnecessarily.\n'
+      '- Clinically precise: Use correct medical terminology, but always offer plain-language '
+      'explanations when the user may not be a specialist.\n'
+      '- Evidence-based: Ground answers in established clinical guidelines (e.g. WHO, CDC, NICE) '
+      'and clearly distinguish between guideline recommendations and general information.\n'
+      '- Honest about limits: If a question is outside your knowledge, say so directly and '
+      'recommend consulting a qualified healthcare professional.\n'
+      '- Safety-first: Always flag emergency situations (e.g. chest pain, stroke symptoms, '
+      'suicidal ideation) and advise immediate emergency services without hesitation.\n\n'
+      '## What You Can Help With\n'
+      '- Differential diagnosis brainstorming and clinical reasoning support\n'
+      '- Drug information: dosing, interactions, contraindications, side-effects\n'
+      '- Interpreting lab values and imaging findings in context\n'
+      '- Summarising patient histories or clinical notes\n'
+      '- ICD-10 / SNOMED coding guidance\n'
+      '- Patient education: explaining conditions and procedures in simple terms\n'
+      '- Clinical guideline lookup and protocol reminders\n\n'
+      '## Important Disclaimers\n'
+      '- You are a decision-support tool, NOT a replacement for a licensed clinician.\n'
+      '- All clinical decisions must be validated by a qualified healthcare professional.\n'
+      '- Never fabricate drug doses, lab reference ranges, or guideline citations — '
+      'state uncertainty explicitly instead.',
+    );
+
     if (_memories.isNotEmpty) {
       final memoryContext = _memories.map((m) => '- ${m.text}').join('\n');
-      payload.add({
-        'role': 'system',
-        'content':
-            'You are WisChat, an offline clinical AI assistant. Here is your memory of saved user facts, patient guidelines, and preferences:\n$memoryContext\nUse these memories when relevant to assist the user.',
-      });
+      systemBuffer.write(
+        '\n\n## Saved Context (Patient / User Memories)\n'
+        'The following facts and preferences have been saved for this session. '
+        'Use them when relevant:\n$memoryContext',
+      );
     }
+
+    payload.add({'role': 'system', 'content': systemBuffer.toString()});
     payload.addAll(_messages.map((m) => m.toMap()));
 
     // 3. Add placeholder assistant message to stream chunks into
@@ -518,7 +553,7 @@ class _WisChatPageState extends State<WisChatPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'WisChat will use this context in local Gemma conversations.',
+                'WisChat will use this as patient context or clinical preference in all offline conversations.',
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textSecondary,
@@ -598,11 +633,7 @@ class _WisChatPageState extends State<WisChatPage>
                       _buildCollapsedSidebarToggle(colors),
 
                     // ── Main Chat Area ──
-                    Expanded(
-                      child: _messages.isEmpty
-                          ? _buildWelcomeScreen(colors)
-                          : _buildConversation(colors),
-                    ),
+                    Expanded(child: _buildChatCanvas(colors)),
                   ],
                 ),
               ),
@@ -943,17 +974,99 @@ class _WisChatPageState extends State<WisChatPage>
 
   // ── Welcome screen ──
 
-  Widget _buildWelcomeScreen(WisteriaColorPalette colors) {
-    return Center(
-      child: Text(
-        'WisChat',
-        style: TextStyle(
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-          color: colors.textPrimary,
-          letterSpacing: -0.5,
+  Widget _buildChatCanvas(WisteriaColorPalette colors) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final logoWidth = _watermarkWidth(
+          constraints,
+          maximumWidth: _messages.isEmpty ? 280 : 240,
+        );
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_messages.isNotEmpty)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: 0.2,
+                    child: Center(child: _buildLogoMark(colors, logoWidth)),
+                  ),
+                ),
+              ),
+            if (_messages.isEmpty)
+              _buildWelcomeScreen(colors, logoWidth)
+            else
+              _buildConversation(colors),
+          ],
+        );
+      },
+    );
+  }
+
+  double _watermarkWidth(
+    BoxConstraints constraints, {
+    required double maximumWidth,
+  }) {
+    final widthLimit = constraints.maxWidth * 0.7 * (687 / 800);
+    final heightLimit = constraints.maxHeight * 0.48 * (687 / 500);
+    final preferredWidth = widthLimit < maximumWidth
+        ? widthLimit
+        : maximumWidth;
+    return preferredWidth < heightLimit ? preferredWidth : heightLimit;
+  }
+
+  Widget _buildLogoMark(WisteriaColorPalette colors, double logoWidth) {
+    final sourceWidth = logoWidth * (1440 / 687);
+    final sourceHeight = sourceWidth * (1024 / 1440);
+
+    return ClipRect(
+      child: SizedBox(
+        width: logoWidth * (800 / 687),
+        height: logoWidth * (500 / 687),
+        child: OverflowBox(
+          minWidth: sourceWidth,
+          maxWidth: sourceWidth,
+          minHeight: sourceHeight,
+          maxHeight: sourceHeight,
+          child: ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              colors.background,
+              BlendMode.multiply,
+              
+            ),
+            child: Image.asset(
+              'assets/logo/logo.png',
+              width: sourceWidth,
+              height: sourceHeight,
+              fit: BoxFit.fill,
+            ),
+          ),
         ),
-        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildWelcomeScreen(WisteriaColorPalette colors, double logoWidth) {
+    return Center(
+      child: IgnorePointer(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Opacity(opacity: 0.4, child: _buildLogoMark(colors, logoWidth)),
+            const SizedBox(height: 4),
+            Text(
+              'Your offline medical AI assistant — private, always available.',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+                letterSpacing: 0.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1402,7 +1515,9 @@ class _MemoryItemCardState extends State<_MemoryItemCard> {
           borderRadius: BorderRadius.circular(WisteriaRadius.sm),
           border: Border.all(
             color: _isHovered
-                ? c.primary.withValues(alpha: 0.35)
+                ? (Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF4D4D4D)
+                    : c.primary.withValues(alpha: 0.35))
                 : c.border.withValues(alpha: 0.7),
           ),
         ),

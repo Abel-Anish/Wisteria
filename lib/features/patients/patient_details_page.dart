@@ -102,6 +102,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     final addressController = TextEditingController(
       text: patient.address ?? '',
     );
+    String? selectedGender = patient.gender;
 
     final formKey = GlobalKey<FormState>();
 
@@ -160,6 +161,26 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 14),
+                    StatefulBuilder(
+                      builder: (ctx, setDropState) {
+                        return DropdownButtonFormField<String?>(
+                          key: const Key('edit_gender_field'),
+                          initialValue: selectedGender,
+                          dropdownColor: dlgColors.surfaceContainer,
+                          style: TextStyle(color: dlgColors.textPrimary),
+                          decoration: const InputDecoration(labelText: 'Gender'),
+                          items: const [
+                            DropdownMenuItem(value: 'Male', child: Text('Male')),
+                            DropdownMenuItem(value: 'Female', child: Text('Female')),
+                            DropdownMenuItem(value: 'Other', child: Text('Other')),
+                          ],
+                          onChanged: (val) {
+                            setDropState(() => selectedGender = val);
+                          },
+                        );
+                      },
                     ),
                     const SizedBox(height: 14),
                     Row(
@@ -223,6 +244,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                   bloodGroup: bloodGroupController.text.trim().isEmpty
                       ? null
                       : bloodGroupController.text.trim(),
+                  gender: selectedGender,
                   otherContact: otherContactController.text.trim().isEmpty
                       ? null
                       : otherContactController.text.trim(),
@@ -700,13 +722,27 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                   children: [
                     Expanded(
                       child: _buildInfoGridItem(
+                        icon: Icons.wc_rounded,
+                        label: 'Gender',
+                        value: patient.gender ?? 'Not provided',
+                        colors: colors,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoGridItem(
                         icon: Icons.phone_outlined,
                         label: 'Primary Phone',
                         value: patient.phoneNumber ?? 'Not provided',
                         colors: colors,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Expanded(
                       child: _buildInfoGridItem(
                         icon: Icons.alternate_email_rounded,
@@ -715,14 +751,16 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                         colors: colors,
                       ),
                     ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildInfoGridItem(
+                        icon: Icons.location_on_outlined,
+                        label: 'Residential Address',
+                        value: patient.address ?? 'Not provided',
+                        colors: colors,
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                _buildInfoGridItem(
-                  icon: Icons.location_on_outlined,
-                  label: 'Residential Address',
-                  value: patient.address ?? 'Not provided',
-                  colors: colors,
                 ),
               ],
             );
@@ -744,6 +782,13 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                 icon: Icons.bloodtype_outlined,
                 label: 'Blood Group',
                 value: patient.bloodGroup ?? 'Not provided',
+                colors: colors,
+              ),
+              const SizedBox(height: 12),
+              _buildInfoGridItem(
+                icon: Icons.wc_rounded,
+                label: 'Gender',
+                value: patient.gender ?? 'Not provided',
                 colors: colors,
               ),
               const SizedBox(height: 12),
@@ -781,6 +826,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     required WisteriaColorPalette colors,
   }) {
     final isProvided = value != 'Not provided' && value.trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,20 +835,26 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: isProvided
-                ? colors.primary.withValues(alpha: 0.10)
-                : colors.surfaceContainer,
+            color: isDark
+                ? Colors.transparent
+                : (isProvided
+                    ? colors.primary.withValues(alpha: 0.10)
+                    : colors.surfaceContainer),
             borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-            border: Border.all(
-              color: isProvided
-                  ? colors.primary.withValues(alpha: 0.20)
-                  : colors.borderSubtle,
-            ),
+            border: isDark
+                ? null
+                : Border.all(
+                    color: isProvided
+                        ? colors.primary.withValues(alpha: 0.20)
+                        : colors.borderSubtle,
+                  ),
           ),
           child: Icon(
             icon,
             size: 15,
-            color: isProvided ? colors.primary : colors.textMuted,
+            color: isDark
+                ? (isProvided ? Colors.white : colors.textMuted)
+                : (isProvided ? colors.primary : colors.textMuted),
           ),
         ),
         const SizedBox(width: 12),
@@ -867,6 +919,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   // ── 3. Left Card: Patient Analytics Card ──
 
   Widget _buildAnalyticsCard(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -882,16 +935,20 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: colors.info.withValues(alpha: 0.08),
+              color: isDark
+                  ? Colors.transparent
+                  : colors.info.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: Border.all(
-                color: colors.info.withValues(alpha: 0.18),
-              ),
+              border: isDark
+                  ? null
+                  : Border.all(
+                      color: colors.info.withValues(alpha: 0.18),
+                    ),
             ),
             child: Icon(
               Icons.analytics_outlined,
               size: 18,
-              color: colors.info,
+              color: isDark ? Colors.white : colors.info,
             ),
           ),
           const SizedBox(width: 14),
@@ -933,6 +990,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   // ── 3. Right Card: Medical History & Trends Card ──
 
   Widget _buildMedicalHistoryCard(WisteriaColorPalette colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -948,16 +1006,20 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: colors.tertiary.withValues(alpha: 0.08),
+              color: isDark
+                  ? Colors.transparent
+                  : colors.tertiary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: Border.all(
-                color: colors.tertiary.withValues(alpha: 0.18),
-              ),
+              border: isDark
+                  ? null
+                  : Border.all(
+                      color: colors.tertiary.withValues(alpha: 0.18),
+                    ),
             ),
             child: Icon(
               Icons.timeline_rounded,
               size: 18,
-              color: colors.tertiary,
+              color: isDark ? Colors.white : colors.tertiary,
             ),
           ),
           const SizedBox(width: 14),
@@ -1073,6 +1135,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     Patient patient,
     WisteriaColorPalette colors,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
@@ -1087,13 +1150,15 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: colors.primary.withValues(alpha: 0.08),
+              color: isDark
+                  ? Colors.transparent
+                  : colors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             ),
             child: Icon(
               Icons.folder_open_outlined,
               size: 20,
-              color: colors.primary.withValues(alpha: 0.7),
+              color: isDark ? Colors.white : colors.primary.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -1165,6 +1230,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     required Widget child,
     Widget? headerTrailing,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1182,16 +1248,20 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.10),
+                  color: isDark
+                      ? Colors.transparent
+                      : colors.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.2),
-                  ),
+                  border: isDark
+                      ? null
+                      : Border.all(
+                          color: colors.primary.withValues(alpha: 0.2),
+                        ),
                 ),
                 child: Icon(
                   icon,
                   size: 17,
-                  color: colors.primary,
+                  color: isDark ? Colors.white : colors.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1274,9 +1344,11 @@ class _InteractiveExaminationTileState
                 : colors.surfaceContainer,
             borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             border: Border.all(
-              color: _isHovered
-                  ? colors.primary.withValues(alpha: 0.6)
-                  : colors.borderSubtle,
+              color: isDark
+                  ? (_isHovered ? const Color(0xFF4D4D4D) : colors.borderSubtle)
+                  : (_isHovered
+                      ? colors.primary.withValues(alpha: 0.6)
+                      : colors.borderSubtle),
               width: 1,
             ),
             boxShadow: _isHovered
@@ -1284,9 +1356,9 @@ class _InteractiveExaminationTileState
                     BoxShadow(
                       blurRadius: 8,
                       offset: const Offset(0, 2),
-                      color: colors.primary.withValues(
-                        alpha: isDark ? 0.12 : 0.06,
-                      ),
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.25)
+                          : colors.primary.withValues(alpha: 0.06),
                     ),
                   ]
                 : [],
@@ -1297,21 +1369,27 @@ class _InteractiveExaminationTileState
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: widget.isMri
-                      ? const Color(0xFF8E24AA).withValues(alpha: 0.10)
-                      : colors.primary.withValues(alpha: 0.10),
+                  color: isDark
+                      ? Colors.transparent
+                      : (widget.isMri
+                          ? const Color(0xFF8E24AA).withValues(alpha: 0.10)
+                          : colors.primary.withValues(alpha: 0.10)),
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(
-                    color: widget.isMri
-                        ? const Color(0xFF8E24AA).withValues(alpha: 0.25)
-                        : colors.primary.withValues(alpha: 0.25),
-                  ),
+                  border: isDark
+                      ? null
+                      : Border.all(
+                          color: widget.isMri
+                              ? const Color(0xFF8E24AA).withValues(alpha: 0.25)
+                              : colors.primary.withValues(alpha: 0.25),
+                        ),
                 ),
                 child: Icon(
                   widget.isMri
                       ? Icons.psychology_outlined
                       : Icons.favorite_border_rounded,
-                  color: widget.isMri ? const Color(0xFF8E24AA) : colors.primary,
+                  color: isDark
+                      ? (widget.isMri ? const Color(0xFFCE93D8) : Colors.white)
+                      : (widget.isMri ? const Color(0xFF8E24AA) : colors.primary),
                   size: 22,
                 ),
               ),
@@ -1380,7 +1458,9 @@ class _InteractiveExaminationTileState
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 13,
-                color: _isHovered ? colors.primary : colors.textMuted,
+                color: isDark
+                    ? (_isHovered ? Colors.white : colors.textMuted)
+                    : (_isHovered ? colors.primary : colors.textMuted),
               ),
             ],
           ),
@@ -1421,22 +1501,26 @@ class _ProminentNewExamCardState extends State<_ProminentNewExamCard> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: isDark
-                ? (_isHovered ? const Color(0xFF1E2833) : const Color(0xFF16212B))
+                ? (_isHovered ? const Color(0xFF3D3D3D) : const Color(0xFF2D2D2D))
                 : (_isHovered ? const Color(0xFFEAF5F7) : const Color(0xFFF1F8F9)),
             borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             border: Border.all(
-              color: _isHovered
-                  ? colors.primary.withValues(alpha: 0.75)
-                  : colors.primary.withValues(alpha: 0.35),
+              color: isDark
+                  ? (_isHovered ? const Color(0xFF666666) : const Color(0xFF4D4D4D))
+                  : (_isHovered
+                      ? colors.primary.withValues(alpha: 0.75)
+                      : colors.primary.withValues(alpha: 0.35)),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 blurRadius: _isHovered ? 16 : 6,
                 offset: const Offset(0, 3),
-                color: colors.primary.withValues(
-                  alpha: isDark ? (_isHovered ? 0.22 : 0.12) : (_isHovered ? 0.14 : 0.06),
-                ),
+                color: isDark
+                    ? Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.20)
+                    : colors.primary.withValues(
+                        alpha: _isHovered ? 0.14 : 0.06,
+                      ),
               ),
             ],
           ),
@@ -1449,18 +1533,26 @@ class _ProminentNewExamCardState extends State<_ProminentNewExamCard> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: colors.primary.withValues(
-                        alpha: _isHovered ? 0.22 : 0.14,
-                      ),
+                      color: isDark
+                          ? (_isHovered
+                              ? const Color(0xFF4D4D4D)
+                              : const Color(0xFF3D3D3D))
+                          : colors.primary.withValues(
+                              alpha: _isHovered ? 0.22 : 0.14,
+                            ),
                       borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                       border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.4),
+                        color: isDark
+                            ? (_isHovered
+                                ? const Color(0xFF666666)
+                                : const Color(0xFF4D4D4D))
+                            : colors.primary.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Icon(
                       Icons.add_circle_outline_rounded,
                       size: 24,
-                      color: colors.primary,
+                      color: isDark ? Colors.white : colors.primary,
                     ),
                   ),
                   const SizedBox(width: 14),

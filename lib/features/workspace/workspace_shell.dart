@@ -234,14 +234,18 @@ class _FloatingEdgeButtonState extends State<_FloatingEdgeButton> {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: _isHovered
-                    ? colors.primary.withValues(alpha: 0.14)
-                    : colors.surfaceContainer,
+                color: isDark
+                    ? (_isHovered ? const Color(0xFF4D4D4D) : colors.surfaceContainer)
+                    : (_isHovered
+                        ? colors.primary.withValues(alpha: 0.14)
+                        : colors.surfaceContainer),
                 borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                 border: Border.all(
-                  color: _isHovered
-                      ? colors.primary.withValues(alpha: 0.5)
-                      : colors.border,
+                  color: isDark
+                      ? (_isHovered ? const Color(0xFF666666) : colors.border)
+                      : (_isHovered
+                          ? colors.primary.withValues(alpha: 0.5)
+                          : colors.border),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -254,7 +258,9 @@ class _FloatingEdgeButtonState extends State<_FloatingEdgeButton> {
               child: Icon(
                 widget.icon,
                 size: 22,
-                color: _isHovered ? colors.primary : colors.textSecondary,
+                color: isDark
+                    ? (_isHovered ? Colors.white : colors.textSecondary)
+                    : (_isHovered ? colors.primary : colors.textSecondary),
               ),
             ),
           ),

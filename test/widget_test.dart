@@ -23,28 +23,36 @@ import 'package:wisteria/features/patients/widgets/patient_age_avatar.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('Verify all local image assets can be loaded from rootBundle', () async {
-    const assets = [
-      'assets/images/new_patients.jpg',
-      'assets/images/registered_patients.jpg',
-      'assets/images/doctor.png',
-      'assets/images/model.jpg',
-      'assets/images/data sync.jpg',
-      'assets/images/settings.jpg',
-      'assets/images/cardiology.jpg',
-      'assets/images/neurology.jpg',
-      'assets/images/ophthalmology.jpg',
-    ];
+  test(
+    'Verify all registered local assets can be loaded from rootBundle',
+    () async {
+      const assets = [
+        'assets/images/new_patients.jpg',
+        'assets/images/registered_patients.jpg',
+        'assets/images/doctor.png',
+        'assets/images/model.jpg',
+        'assets/images/data sync.jpg',
+        'assets/images/settings.jpg',
+        'assets/images/cardiology.jpg',
+        'assets/images/neurology.jpg',
+        'assets/images/ophthalmology.jpg',
+        'assets/logo/bglogo.png',
+        'assets/logo/logo.png',
+        'assets/logo/Frame 1.png',
+        'assets/logo/logo.svg',
+        'assets/logo/Frame 1.svg',
+      ];
 
-    for (final asset in assets) {
-      final byteData = await rootBundle.load(asset);
-      expect(
-        byteData.lengthInBytes,
-        greaterThan(0),
-        reason: 'Asset $asset failed to load or is empty',
-      );
-    }
-  });
+      for (final asset in assets) {
+        final byteData = await rootBundle.load(asset);
+        expect(
+          byteData.lengthInBytes,
+          greaterThan(0),
+          reason: 'Asset $asset failed to load or is empty',
+        );
+      }
+    },
+  );
 
   test('Verify patient age category mapping', () {
     expect(getPatientAgeCategory(null), PatientAgeCategory.adult);
@@ -361,9 +369,8 @@ void main() {
       expect(find.text('Doctor Profile'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Models'), findsOneWidget);
-      expect(find.text('Offline Model'), findsOneWidget);
       expect(find.text('Sync'), findsOneWidget);
-      expect(find.byType(Image), findsNWidgets(5));
+      expect(find.byType(Image), findsNWidgets(4));
 
       await db.close();
     },
@@ -377,11 +384,11 @@ void main() {
     expect(WisteriaColors.darkPalette.primary, const Color(0xFF098FA6));
     expect(WisteriaColors.lightPalette.primary, const Color(0xFF098FA6));
 
-    expect(WisteriaColors.darkPalette.background, const Color(0xFF111923));
-    expect(WisteriaColors.darkPalette.surface, const Color(0xFF1A2632));
-    expect(WisteriaColors.darkPalette.textPrimary, const Color(0xFFF1F5F7));
-    expect(WisteriaColors.darkPalette.textSecondary, const Color(0xFFA6B5C0));
-    expect(WisteriaColors.darkPalette.border, const Color(0xFF2B3B48));
+    expect(WisteriaColors.darkPalette.background, const Color(0xFF0D0D0D));
+    expect(WisteriaColors.darkPalette.surface, const Color(0xFF3D3D3D));
+    expect(WisteriaColors.darkPalette.textPrimary, const Color(0xFFFFFFFF));
+    expect(WisteriaColors.darkPalette.textSecondary, const Color(0xFFCCCCCC));
+    expect(WisteriaColors.darkPalette.border, const Color(0xFF333333));
 
     expect(WisteriaColors.lightPalette.background, const Color(0xFFF0F5F6));
     expect(WisteriaColors.lightPalette.surface, const Color(0xFFFFFFFF));
@@ -860,5 +867,230 @@ void main() {
       await db.close();
     },
   );
-}
 
+  test('Verify Neutral Grayscale Dark Mode Theme specification and button color preservation', () {
+    // 1. Five Reference Neutral Shades
+    expect(WisteriaColors.darkPalette.background, const Color(0xFF0D0D0D)); // Near-black background
+    expect(WisteriaColors.darkPalette.surfaceLow, const Color(0xFF1D1D1D)); // Secondary dark surface
+    expect(WisteriaColors.darkPalette.surfaceContainer, const Color(0xFF2D2D2D)); // Elevated surface
+    expect(WisteriaColors.darkPalette.surface, const Color(0xFF3D3D3D)); // Card or panel surface
+    expect(WisteriaColors.darkPalette.surfaceHighest, const Color(0xFF4D4D4D)); // Lighter neutral surface
+
+    // 2. White typography throughout dark mode
+    expect(WisteriaColors.darkPalette.textPrimary, const Color(0xFFFFFFFF));
+    expect(WisteriaColors.darkPalette.textSecondary, const Color(0xFFCCCCCC));
+    expect(WisteriaColors.darkPalette.textMuted, const Color(0xFF8E8E8E));
+    expect(WisteriaColors.darkPalette.textOnPrimary, const Color(0xFFFFFFFF));
+
+    // 3. Strict button color preservation
+    expect(WisteriaColors.darkPalette.primary, const Color(0xFF098FA6));
+    expect(WisteriaColors.darkPalette.primaryMuted, const Color(0xFF07788C));
+    expect(WisteriaColors.darkPalette.secondary, const Color(0xFF0D9488));
+    expect(WisteriaColors.darkPalette.tertiary, const Color(0xFF2DD4BF));
+
+    // 4. Neutral borders and focus
+    expect(WisteriaColors.darkPalette.border, const Color(0xFF333333));
+    expect(WisteriaColors.darkPalette.borderSubtle, const Color(0xFF222222));
+    expect(WisteriaColors.darkPalette.borderFocus, const Color(0xFF6E6E6E));
+
+    // 5. Light mode preservation
+    expect(WisteriaColors.lightPalette.background, const Color(0xFFF0F5F6));
+    expect(WisteriaColors.lightPalette.surface, const Color(0xFFFFFFFF));
+    expect(WisteriaColors.lightPalette.primary, const Color(0xFF098FA6));
+    expect(WisteriaColors.lightPalette.primaryMuted, const Color(0xFF07788C));
+    expect(WisteriaColors.lightPalette.textPrimary, const Color(0xFF1E293B));
+  });
+  testWidgets(
+    'Patient gender field persists across create, update, and PatientDetailsPage display',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final repo = PatientRepository(db);
+
+      // 1. Create patient with Gender
+      await repo.createPatient(
+        id: 'patient-gender-test',
+        name: 'Alex Morgan',
+        age: 28,
+        bloodGroup: 'AB+',
+        gender: 'Female',
+        phoneNumber: '+1-555-0144',
+        otherContact: 'alex@example.org',
+        address: '100 Medical Plaza',
+      );
+
+      // Verify DB stored gender
+      final p1 = await repo.getPatientById('patient-gender-test');
+      expect(p1?.gender, equals('Female'));
+
+      // 2. Render in PatientDetailsPage in Dark Mode and verify Gender display
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.dark),
+          home: PatientDetailsPage(
+            database: db,
+            patientId: 'patient-gender-test',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('GENDER'), findsOneWidget);
+      expect(find.text('Female'), findsOneWidget);
+
+      // 3. Update patient gender to Other
+      final updated = await repo.updatePatient(
+        id: 'patient-gender-test',
+        name: 'Alex Morgan',
+        age: 28,
+        bloodGroup: 'AB+',
+        gender: 'Other',
+        phoneNumber: '+1-555-0144',
+        otherContact: 'alex@example.org',
+        address: '100 Medical Plaza',
+      );
+      expect(updated, isTrue);
+
+      final p2 = await repo.getPatientById('patient-gender-test');
+      expect(p2?.gender, equals('Other'));
+
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'Patient Record Overview dark mode renders white icon glyphs without blue container backgrounds',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final repo = PatientRepository(db);
+
+      await repo.createPatient(
+        id: 'patient-icon-test',
+        name: 'Test Patient',
+        age: 45,
+        bloodGroup: 'B+',
+        gender: 'Male',
+        phoneNumber: '+1-555-9988',
+        otherContact: 'test@example.com',
+        address: '77 Clinic Way',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.dark),
+          home: PatientDetailsPage(
+            database: db,
+            patientId: 'patient-icon-test',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Find icons in info items (e.g. cake, bloodtype, wc, phone, alternate_email, location_on)
+      final ageIcon = tester.widget<Icon>(find.byIcon(Icons.cake_outlined));
+      expect(ageIcon.color, equals(Colors.white));
+
+      final genderIcon = tester.widget<Icon>(find.byIcon(Icons.wc_rounded));
+      expect(genderIcon.color, equals(Colors.white));
+
+      final bloodIcon = tester.widget<Icon>(find.byIcon(Icons.bloodtype_outlined));
+      expect(bloodIcon.color, equals(Colors.white));
+
+      final phoneIcon = tester.widget<Icon>(find.byIcon(Icons.phone_outlined));
+      expect(phoneIcon.color, equals(Colors.white));
+
+      // Header icon
+      final personHeaderIcon = tester.widget<Icon>(find.byIcon(Icons.person_outline_rounded));
+      expect(personHeaderIcon.color, equals(Colors.white));
+
+      // Begin Examination button preserves primary color
+      expect(find.text('Begin Examination'), findsOneWidget);
+
+      await db.close();
+    },
+  );
+  testWidgets(
+    'CreateExaminationPage dark mode renders white icons without blue backgrounds and preserves buttons/badges',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.dark),
+          home: CreateExaminationPage(
+            database: db,
+            patientId: 'patient-test-icons',
+            patientName: 'Jane Smith',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Top bar patient pill icon is white
+      final topPatientIcon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byType(AppBar).evaluate().isEmpty ? find.byType(Scaffold) : find.byType(AppBar),
+          matching: find.byIcon(Icons.person_outline_rounded),
+        ).first,
+      );
+      expect(topPatientIcon.color, equals(Colors.white));
+
+      // Select Cardiology specialty
+      await tester.tap(find.text('Select Specialty').first);
+      await tester.pumpAndSettle();
+
+      // Active specialty banner icon (favorite_rounded) is white
+      final specialtyIcon = tester.widget<Icon>(find.byIcon(Icons.favorite_rounded));
+      expect(specialtyIcon.color, equals(Colors.white));
+
+      // Examination Setup section icon (assignment_outlined) is white
+      final examSetupIcon = tester.widget<Icon>(find.byIcon(Icons.assignment_outlined));
+      expect(examSetupIcon.color, equals(Colors.white));
+
+      // Patient identity icon in Stage A is white
+      final patientIcons = tester.widgetList<Icon>(find.byIcon(Icons.person_outline_rounded));
+      for (final icon in patientIcons) {
+        expect(icon.color, equals(Colors.white));
+      }
+
+      // Medical Image header icon is white
+      final medicalImageIcon = tester.widget<Icon>(find.byIcon(Icons.image_outlined));
+      expect(medicalImageIcon.color, equals(Colors.white));
+
+      // Image upload icon (add_photo_alternate_outlined) is white
+      final uploadIcon = tester.widget<Icon>(find.byIcon(Icons.add_photo_alternate_outlined));
+      expect(uploadIcon.color, equals(Colors.white));
+
+      // AI Analysis section icon (memory_rounded) is white
+      final aiAnalysisIcon = tester.widget<Icon>(find.byIcon(Icons.memory_rounded));
+      expect(aiAnalysisIcon.color, equals(Colors.white));
+
+      // ONNX model icon (developer_board_rounded) is white
+      final onnxIcon = tester.widget<Icon>(find.byIcon(Icons.developer_board_rounded));
+      expect(onnxIcon.color, equals(Colors.white));
+
+      // Clinical disclaimer icon (verified_user_outlined) is white
+      final disclaimerIcon = tester.widget<Icon>(find.byIcon(Icons.verified_user_outlined));
+      expect(disclaimerIcon.color, equals(Colors.white));
+
+      // Buttons preserved: Browse Image File button is present
+      expect(find.text('Browse Image File'), findsOneWidget);
+
+      // Status indicator preserved: LOCAL ONNX badge is present
+      expect(find.text('LOCAL ONNX'), findsOneWidget);
+
+      await db.close();
+    },
+  );
+}
