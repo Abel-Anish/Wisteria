@@ -501,6 +501,7 @@ class _PatientCardState extends State<_PatientCard> {
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final patient = widget.patient;
 
     return MouseRegion(
@@ -513,12 +514,16 @@ class _PatientCardState extends State<_PatientCard> {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: _isHovered ? colors.surfaceLow : colors.surface,
+            color: isDark
+                ? (_isHovered ? const Color(0xFF4D4D4D) : colors.surface)
+                : (_isHovered ? colors.surfaceLow : colors.surface),
             borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             border: Border.all(
-              color: _isHovered
-                  ? colors.primary.withValues(alpha: 0.5)
-                  : colors.border,
+              color: isDark
+                  ? (_isHovered ? const Color(0xFF666666) : colors.border)
+                  : (_isHovered
+                      ? colors.primary.withValues(alpha: 0.5)
+                      : colors.border),
               width: 1,
             ),
             boxShadow: _isHovered
@@ -526,7 +531,7 @@ class _PatientCardState extends State<_PatientCard> {
                     BoxShadow(
                       blurRadius: 8,
                       offset: const Offset(0, 3),
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.12),
                     ),
                   ]
                 : [],
@@ -548,15 +553,21 @@ class _PatientCardState extends State<_PatientCard> {
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: _isHovered
-                          ? colors.primary.withValues(alpha: 0.12)
-                          : Colors.transparent,
+                      color: isDark
+                          ? (_isHovered
+                              ? const Color(0xFF3D3D3D)
+                              : Colors.transparent)
+                          : (_isHovered
+                              ? colors.primary.withValues(alpha: 0.12)
+                              : Colors.transparent),
                       borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                     ),
                     child: Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: _isHovered ? colors.primary : colors.textMuted,
+                      color: isDark
+                          ? (_isHovered ? Colors.white : colors.textMuted)
+                          : (_isHovered ? colors.primary : colors.textMuted),
                     ),
                   ),
                 ],

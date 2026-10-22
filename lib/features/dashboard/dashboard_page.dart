@@ -441,6 +441,9 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Tooltip(
       message: widget.tooltip,
       child: MouseRegion(
@@ -454,22 +457,26 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: _isHovered
-                  ? WisteriaColors.primary.withValues(alpha: 0.12)
-                  : WisteriaColors.surfaceLow,
+              color: isDark
+                  ? (_isHovered ? const Color(0xFF4D4D4D) : colors.surfaceLow)
+                  : (_isHovered
+                      ? colors.primary.withValues(alpha: 0.12)
+                      : colors.surfaceLow),
               borderRadius: BorderRadius.circular(WisteriaRadius.md),
               border: Border.all(
-                color: _isHovered
-                    ? WisteriaColors.primary.withValues(alpha: 0.3)
-                    : WisteriaColors.border,
+                color: isDark
+                    ? (_isHovered ? const Color(0xFF666666) : colors.border)
+                    : (_isHovered
+                        ? colors.primary.withValues(alpha: 0.3)
+                        : colors.border),
               ),
             ),
             child: Icon(
               widget.icon,
               size: 20,
-              color: _isHovered
-                  ? WisteriaColors.primary
-                  : WisteriaColors.textSecondary,
+              color: isDark
+                  ? (_isHovered ? Colors.white : colors.textSecondary)
+                  : (_isHovered ? colors.primary : colors.textSecondary),
             ),
           ),
         ),

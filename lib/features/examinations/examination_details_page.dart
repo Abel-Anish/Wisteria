@@ -619,10 +619,18 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: colors.primary.withValues(alpha: 0.12),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.transparent
+                              : colors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                         ),
-                        child: Icon(Icons.image_outlined, size: 16, color: colors.primary),
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 16,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : colors.primary,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -930,15 +938,21 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: typeAccent.withValues(alpha: 0.12),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.transparent
+                  : typeAccent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: Border.all(
-                color: typeAccent.withValues(alpha: 0.3),
-              ),
+              border: Theme.of(context).brightness == Brightness.dark
+                  ? null
+                  : Border.all(
+                      color: typeAccent.withValues(alpha: 0.3),
+                    ),
             ),
             child: Icon(
               isMri ? Icons.psychology_outlined : Icons.favorite_border_rounded,
-              color: typeAccent,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : typeAccent,
               size: 26,
             ),
           ),
@@ -1195,7 +1209,13 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 13, color: colors.primary),
+              Icon(
+                icon,
+                size: 13,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : colors.primary,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -2406,13 +2426,23 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.12),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.transparent
+                      : colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.25),
-                  ),
+                  border: Theme.of(context).brightness == Brightness.dark
+                      ? null
+                      : Border.all(
+                          color: colors.primary.withValues(alpha: 0.25),
+                        ),
                 ),
-                child: Icon(icon, size: 16, color: colors.primary),
+                child: Icon(
+                  icon,
+                  size: 16,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : colors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

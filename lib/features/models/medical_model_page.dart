@@ -251,15 +251,21 @@ class _ModelCardState extends State<_ModelCard> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.1),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.transparent
+                          : colors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                      border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.25),
-                      ),
+                      border: Theme.of(context).brightness == Brightness.dark
+                          ? null
+                          : Border.all(
+                              color: colors.primary.withValues(alpha: 0.25),
+                            ),
                     ),
                     child: Icon(
                       Icons.memory_rounded,
-                      color: colors.primary,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : colors.primary,
                       size: 24,
                     ),
                   ),

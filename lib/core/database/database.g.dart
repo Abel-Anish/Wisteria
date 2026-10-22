@@ -711,6 +711,15 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
+  @override
+  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
+    'gender',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _otherContactMeta = const VerificationMeta(
     'otherContact',
   );
@@ -740,6 +749,7 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
     phoneNumber,
     age,
     bloodGroup,
+    gender,
     otherContact,
     address,
   ];
@@ -789,6 +799,12 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
         bloodGroup.isAcceptableOrUnknown(data['blood_group']!, _bloodGroupMeta),
       );
     }
+    if (data.containsKey('gender')) {
+      context.handle(
+        _genderMeta,
+        gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
+      );
+    }
     if (data.containsKey('other_contact')) {
       context.handle(
         _otherContactMeta,
@@ -833,6 +849,10 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
         DriftSqlType.string,
         data['${effectivePrefix}blood_group'],
       ),
+      gender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gender'],
+      ),
       otherContact: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}other_contact'],
@@ -856,6 +876,7 @@ class Patient extends DataClass implements Insertable<Patient> {
   final String? phoneNumber;
   final int? age;
   final String? bloodGroup;
+  final String? gender;
   final String? otherContact;
   final String? address;
   const Patient({
@@ -864,6 +885,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     this.phoneNumber,
     this.age,
     this.bloodGroup,
+    this.gender,
     this.otherContact,
     this.address,
   });
@@ -880,6 +902,9 @@ class Patient extends DataClass implements Insertable<Patient> {
     }
     if (!nullToAbsent || bloodGroup != null) {
       map['blood_group'] = Variable<String>(bloodGroup);
+    }
+    if (!nullToAbsent || gender != null) {
+      map['gender'] = Variable<String>(gender);
     }
     if (!nullToAbsent || otherContact != null) {
       map['other_contact'] = Variable<String>(otherContact);
@@ -901,6 +926,9 @@ class Patient extends DataClass implements Insertable<Patient> {
       bloodGroup: bloodGroup == null && nullToAbsent
           ? const Value.absent()
           : Value(bloodGroup),
+      gender: gender == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gender),
       otherContact: otherContact == null && nullToAbsent
           ? const Value.absent()
           : Value(otherContact),
@@ -921,6 +949,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       phoneNumber: serializer.fromJson<String?>(json['phoneNumber']),
       age: serializer.fromJson<int?>(json['age']),
       bloodGroup: serializer.fromJson<String?>(json['bloodGroup']),
+      gender: serializer.fromJson<String?>(json['gender']),
       otherContact: serializer.fromJson<String?>(json['otherContact']),
       address: serializer.fromJson<String?>(json['address']),
     );
@@ -934,6 +963,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       'phoneNumber': serializer.toJson<String?>(phoneNumber),
       'age': serializer.toJson<int?>(age),
       'bloodGroup': serializer.toJson<String?>(bloodGroup),
+      'gender': serializer.toJson<String?>(gender),
       'otherContact': serializer.toJson<String?>(otherContact),
       'address': serializer.toJson<String?>(address),
     };
@@ -945,6 +975,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     Value<String?> phoneNumber = const Value.absent(),
     Value<int?> age = const Value.absent(),
     Value<String?> bloodGroup = const Value.absent(),
+    Value<String?> gender = const Value.absent(),
     Value<String?> otherContact = const Value.absent(),
     Value<String?> address = const Value.absent(),
   }) => Patient(
@@ -953,6 +984,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     phoneNumber: phoneNumber.present ? phoneNumber.value : this.phoneNumber,
     age: age.present ? age.value : this.age,
     bloodGroup: bloodGroup.present ? bloodGroup.value : this.bloodGroup,
+    gender: gender.present ? gender.value : this.gender,
     otherContact: otherContact.present ? otherContact.value : this.otherContact,
     address: address.present ? address.value : this.address,
   );
@@ -967,6 +999,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       bloodGroup: data.bloodGroup.present
           ? data.bloodGroup.value
           : this.bloodGroup,
+      gender: data.gender.present ? data.gender.value : this.gender,
       otherContact: data.otherContact.present
           ? data.otherContact.value
           : this.otherContact,
@@ -982,6 +1015,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           ..write('phoneNumber: $phoneNumber, ')
           ..write('age: $age, ')
           ..write('bloodGroup: $bloodGroup, ')
+          ..write('gender: $gender, ')
           ..write('otherContact: $otherContact, ')
           ..write('address: $address')
           ..write(')'))
@@ -995,6 +1029,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     phoneNumber,
     age,
     bloodGroup,
+    gender,
     otherContact,
     address,
   );
@@ -1007,6 +1042,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           other.phoneNumber == this.phoneNumber &&
           other.age == this.age &&
           other.bloodGroup == this.bloodGroup &&
+          other.gender == this.gender &&
           other.otherContact == this.otherContact &&
           other.address == this.address);
 }
@@ -1017,6 +1053,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
   final Value<String?> phoneNumber;
   final Value<int?> age;
   final Value<String?> bloodGroup;
+  final Value<String?> gender;
   final Value<String?> otherContact;
   final Value<String?> address;
   final Value<int> rowid;
@@ -1026,6 +1063,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     this.phoneNumber = const Value.absent(),
     this.age = const Value.absent(),
     this.bloodGroup = const Value.absent(),
+    this.gender = const Value.absent(),
     this.otherContact = const Value.absent(),
     this.address = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1036,6 +1074,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     this.phoneNumber = const Value.absent(),
     this.age = const Value.absent(),
     this.bloodGroup = const Value.absent(),
+    this.gender = const Value.absent(),
     this.otherContact = const Value.absent(),
     this.address = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1047,6 +1086,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     Expression<String>? phoneNumber,
     Expression<int>? age,
     Expression<String>? bloodGroup,
+    Expression<String>? gender,
     Expression<String>? otherContact,
     Expression<String>? address,
     Expression<int>? rowid,
@@ -1057,6 +1097,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       if (phoneNumber != null) 'phone_number': phoneNumber,
       if (age != null) 'age': age,
       if (bloodGroup != null) 'blood_group': bloodGroup,
+      if (gender != null) 'gender': gender,
       if (otherContact != null) 'other_contact': otherContact,
       if (address != null) 'address': address,
       if (rowid != null) 'rowid': rowid,
@@ -1069,6 +1110,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     Value<String?>? phoneNumber,
     Value<int?>? age,
     Value<String?>? bloodGroup,
+    Value<String?>? gender,
     Value<String?>? otherContact,
     Value<String?>? address,
     Value<int>? rowid,
@@ -1079,6 +1121,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       age: age ?? this.age,
       bloodGroup: bloodGroup ?? this.bloodGroup,
+      gender: gender ?? this.gender,
       otherContact: otherContact ?? this.otherContact,
       address: address ?? this.address,
       rowid: rowid ?? this.rowid,
@@ -1103,6 +1146,9 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     if (bloodGroup.present) {
       map['blood_group'] = Variable<String>(bloodGroup.value);
     }
+    if (gender.present) {
+      map['gender'] = Variable<String>(gender.value);
+    }
     if (otherContact.present) {
       map['other_contact'] = Variable<String>(otherContact.value);
     }
@@ -1123,6 +1169,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
           ..write('phoneNumber: $phoneNumber, ')
           ..write('age: $age, ')
           ..write('bloodGroup: $bloodGroup, ')
+          ..write('gender: $gender, ')
           ..write('otherContact: $otherContact, ')
           ..write('address: $address, ')
           ..write('rowid: $rowid')
@@ -8458,6 +8505,7 @@ typedef $$PatientsTableCreateCompanionBuilder =
       Value<String?> phoneNumber,
       Value<int?> age,
       Value<String?> bloodGroup,
+      Value<String?> gender,
       Value<String?> otherContact,
       Value<String?> address,
       Value<int> rowid,
@@ -8469,6 +8517,7 @@ typedef $$PatientsTableUpdateCompanionBuilder =
       Value<String?> phoneNumber,
       Value<int?> age,
       Value<String?> bloodGroup,
+      Value<String?> gender,
       Value<String?> otherContact,
       Value<String?> address,
       Value<int> rowid,
@@ -8602,6 +8651,11 @@ class $$PatientsTableFilterComposer
 
   ColumnFilters<String> get bloodGroup => $composableBuilder(
     column: $table.bloodGroup,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gender => $composableBuilder(
+    column: $table.gender,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8754,6 +8808,11 @@ class $$PatientsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get otherContact => $composableBuilder(
     column: $table.otherContact,
     builder: (column) => ColumnOrderings(column),
@@ -8792,6 +8851,9 @@ class $$PatientsTableAnnotationComposer
     column: $table.bloodGroup,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get gender =>
+      $composableBuilder(column: $table.gender, builder: (column) => column);
 
   GeneratedColumn<String> get otherContact => $composableBuilder(
     column: $table.otherContact,
@@ -8946,6 +9008,7 @@ class $$PatientsTableTableManager
                 Value<String?> phoneNumber = const Value.absent(),
                 Value<int?> age = const Value.absent(),
                 Value<String?> bloodGroup = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
                 Value<String?> otherContact = const Value.absent(),
                 Value<String?> address = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8955,6 +9018,7 @@ class $$PatientsTableTableManager
                 phoneNumber: phoneNumber,
                 age: age,
                 bloodGroup: bloodGroup,
+                gender: gender,
                 otherContact: otherContact,
                 address: address,
                 rowid: rowid,
@@ -8966,6 +9030,7 @@ class $$PatientsTableTableManager
                 Value<String?> phoneNumber = const Value.absent(),
                 Value<int?> age = const Value.absent(),
                 Value<String?> bloodGroup = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
                 Value<String?> otherContact = const Value.absent(),
                 Value<String?> address = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8975,6 +9040,7 @@ class $$PatientsTableTableManager
                 phoneNumber: phoneNumber,
                 age: age,
                 bloodGroup: bloodGroup,
+                gender: gender,
                 otherContact: otherContact,
                 address: address,
                 rowid: rowid,

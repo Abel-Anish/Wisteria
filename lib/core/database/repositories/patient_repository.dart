@@ -23,6 +23,7 @@ class PatientRepository {
     String? phoneNumber,
     int? age,
     String? bloodGroup,
+    String? gender,
     String? otherContact,
     String? address,
   }) async {
@@ -35,6 +36,7 @@ class PatientRepository {
             phoneNumber: Value(phoneNumber),
             age: Value(age),
             bloodGroup: Value(bloodGroup),
+            gender: Value(gender),
             otherContact: Value(otherContact),
             address: Value(address),
           ),
@@ -47,6 +49,7 @@ class PatientRepository {
     String? phoneNumber,
     int? age,
     String? bloodGroup,
+    String? gender,
     String? otherContact,
     String? address,
   }) async {
@@ -59,6 +62,7 @@ class PatientRepository {
             phoneNumber: Value(phoneNumber),
             age: Value(age),
             bloodGroup: Value(bloodGroup),
+            gender: Value(gender),
             otherContact: Value(otherContact),
             address: Value(address),
           ),

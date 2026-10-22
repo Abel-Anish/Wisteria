@@ -355,13 +355,19 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: colors.primary.withValues(alpha: 0.10),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.transparent
+                : colors.primary.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-            border: Border.all(color: colors.primary.withValues(alpha: 0.18)),
+            border: Theme.of(context).brightness == Brightness.dark
+                ? null
+                : Border.all(color: colors.primary.withValues(alpha: 0.18)),
           ),
           child: Icon(
             Icons.medical_information_rounded,
-            color: colors.primary,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : colors.primary,
             size: 26,
           ),
         ),

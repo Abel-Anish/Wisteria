@@ -44,6 +44,8 @@ class Patients extends Table {
 
   TextColumn get bloodGroup => text().nullable()();
 
+  TextColumn get gender => text().nullable()();
+
   TextColumn get otherContact => text().nullable()();
 
   TextColumn get address => text().nullable()();

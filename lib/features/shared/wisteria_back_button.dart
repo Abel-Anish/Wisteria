@@ -20,6 +20,7 @@ class _WisteriaBackButtonState extends State<WisteriaBackButton> {
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -30,14 +31,20 @@ class _WisteriaBackButtonState extends State<WisteriaBackButton> {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: _isHovered
-                ? colors.primary.withValues(alpha: 0.10)
-                : Colors.transparent,
+            color: isDark
+                ? (_isHovered ? const Color(0xFF3D3D3D) : Colors.transparent)
+                : (_isHovered
+                    ? colors.primary.withValues(alpha: 0.10)
+                    : Colors.transparent),
             borderRadius: BorderRadius.circular(WisteriaRadius.md),
             border: Border.all(
-              color: _isHovered
-                  ? colors.primary.withValues(alpha: 0.3)
-                  : colors.border.withValues(alpha: 0.5),
+              color: isDark
+                  ? (_isHovered
+                      ? const Color(0xFF4D4D4D)
+                      : colors.border.withValues(alpha: 0.5))
+                  : (_isHovered
+                      ? colors.primary.withValues(alpha: 0.3)
+                      : colors.border.withValues(alpha: 0.5)),
             ),
           ),
           child: Row(
@@ -46,9 +53,11 @@ class _WisteriaBackButtonState extends State<WisteriaBackButton> {
               Icon(
                 Icons.arrow_back_rounded,
                 size: 18,
-                color: _isHovered
-                    ? colors.primary
-                    : colors.textSecondary,
+                color: isDark
+                    ? (_isHovered ? Colors.white : colors.textSecondary)
+                    : (_isHovered
+                        ? colors.primary
+                        : colors.textSecondary),
               ),
               const SizedBox(width: 8),
               Text(
@@ -56,9 +65,11 @@ class _WisteriaBackButtonState extends State<WisteriaBackButton> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: _isHovered
-                      ? colors.primary
-                      : colors.textSecondary,
+                  color: isDark
+                      ? (_isHovered ? Colors.white : colors.textSecondary)
+                      : (_isHovered
+                          ? colors.primary
+                          : colors.textSecondary),
                 ),
               ),
             ],
