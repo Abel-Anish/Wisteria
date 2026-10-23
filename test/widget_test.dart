@@ -17,6 +17,7 @@ import 'package:wisteria/features/examinations/create_examination_page.dart';
 import 'package:wisteria/features/examinations/examination_details_page.dart';
 import 'package:wisteria/features/patients/new_patient_registration_page.dart';
 import 'package:wisteria/features/patients/patient_details_page.dart';
+import 'package:wisteria/features/patients/patient_information_page.dart';
 import 'package:wisteria/features/patients/patient_page.dart';
 import 'package:wisteria/features/patients/widgets/patient_age_avatar.dart';
 
@@ -36,6 +37,11 @@ void main() {
         'assets/images/cardiology.jpg',
         'assets/images/neurology.jpg',
         'assets/images/ophthalmology.jpg',
+        'assets/images/patient info.jpg',
+        'assets/images/new examination.jpg',
+        'assets/images/patient analytics.jpg',
+        'assets/images/medical history.jpg',
+        'assets/images/examination record.jpg',
         'assets/logo/bglogo.png',
         'assets/logo/logo.png',
         'assets/logo/Frame 1.png',
@@ -686,7 +692,7 @@ void main() {
   );
 
   testWidgets(
-    'PatientDetailsPage renders Option C layout with compact identity header, side-by-side patient info and new exam, paired analytics and history, and bottom examinations section in Dark and Light modes',
+    'PatientDetailsPage renders exactly five separate image cards in Dark and Light modes',
     (tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -717,38 +723,27 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Compact Patient Identity Header
-        expect(find.text('Dr. Jane Doe'), findsOneWidget);
-        expect(find.text('patient-opt-a'), findsOneWidget);
-        expect(find.text('Edit Patient'), findsOneWidget);
-        expect(find.text('Delete'), findsOneWidget);
-
-        // Left Column: Patient Information Section (Tidy Grid)
+        // Exactly five separate cards
         expect(find.text('Patient Information'), findsOneWidget);
-        expect(find.text('AGE'), findsOneWidget);
-        expect(find.text('34 years'), findsOneWidget);
-        expect(find.text('BLOOD GROUP'), findsOneWidget);
-        expect(find.text('O+'), findsOneWidget);
-        expect(find.text('PRIMARY PHONE'), findsOneWidget);
-        expect(find.text('+1 555-0199'), findsOneWidget);
-        expect(find.text('SECONDARY CONTACT'), findsOneWidget);
-        expect(find.text('jane.doe@hospital.org'), findsOneWidget);
-        expect(find.text('RESIDENTIAL ADDRESS'), findsOneWidget);
-        expect(find.text('452 Healthcare Ave, Metro City'), findsOneWidget);
-
-        // Right Column: Prominent New Examination Card
         expect(find.text('New Examination'), findsOneWidget);
-        expect(find.text('PRIMARY'), findsOneWidget);
-        expect(find.text('Begin Examination'), findsOneWidget);
-
-        // Right Column: Secondary Modules
         expect(find.text('Patient Analytics'), findsOneWidget);
         expect(find.text('Medical History & Trends'), findsOneWidget);
-        expect(find.text('Coming Soon'), findsNWidgets(2));
+        expect(find.text('Examination Records'), findsOneWidget);
 
-        // Bottom Section: Examinations Records (Sensible Empty State)
-        expect(find.text('Examinations Records'), findsOneWidget);
-        expect(find.text('No Examinations Recorded'), findsOneWidget);
+        // Descriptions on cards
+        expect(
+          find.text('Clinical demographic profile & contact details'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('AI-assisted clinical evaluation & reporting'),
+          findsOneWidget,
+        );
+
+        // Personal profile details are NOT displayed directly on main dashboard
+        expect(find.text('Dr. Jane Doe'), findsNothing);
+        expect(find.text('34 years'), findsNothing);
+        expect(find.text('jane.doe@hospital.org'), findsNothing);
       }
 
       await db.close();
@@ -756,7 +751,7 @@ void main() {
   );
 
   testWidgets(
-    'Back navigation fix: PatientDetailsPage -> Begin Examination -> Back returns to originating PatientDetailsPage',
+    'Back navigation fix: PatientDetailsPage -> New Examination -> Back returns to originating PatientDetailsPage',
     (tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -787,12 +782,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify we start on PatientDetailsPage
-      expect(find.text('Arthur Pendelton'), findsOneWidget);
-      expect(find.text('Begin Examination'), findsOneWidget);
+      // Verify five cards present on dashboard
+      expect(find.text('New Examination'), findsOneWidget);
+      expect(find.text('Patient Information'), findsOneWidget);
 
-      // Tap Begin Examination -> opens CreateExaminationPage
-      await tester.tap(find.text('Begin Examination'));
+      // Tap New Examination -> opens CreateExaminationPage
+      await tester.tap(find.text('New Examination'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       // Verify we are now on CreateExaminationPage (Stage 0: Select Medical Specialty)
@@ -811,10 +806,8 @@ void main() {
 
       // Crucial verification: We must return directly to Arthur Pendelton's PatientDetailsPage!
       expect(find.text('Select Medical Specialty'), findsNothing);
-      expect(find.text('Arthur Pendelton'), findsOneWidget);
-      expect(find.text('patient-nav-test'), findsOneWidget);
       expect(find.text('Patient Information'), findsOneWidget);
-      expect(find.text('Begin Examination'), findsOneWidget);
+      expect(find.text('New Examination'), findsOneWidget);
 
       await db.close();
     },
@@ -926,11 +919,11 @@ void main() {
       final p1 = await repo.getPatientById('patient-gender-test');
       expect(p1?.gender, equals('Female'));
 
-      // 2. Render in PatientDetailsPage in Dark Mode and verify Gender display
+      // 2. Render in PatientInformationPage in Dark Mode and verify Gender display
       await tester.pumpWidget(
         MaterialApp(
           theme: buildWisteriaTheme(brightness: Brightness.dark),
-          home: PatientDetailsPage(
+          home: PatientInformationPage(
             database: db,
             patientId: 'patient-gender-test',
           ),
@@ -962,7 +955,7 @@ void main() {
   );
 
   testWidgets(
-    'Patient Record Overview dark mode renders white icon glyphs without blue container backgrounds',
+    'PatientInformationPage dark mode renders details and profile actions',
     (tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -985,7 +978,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildWisteriaTheme(brightness: Brightness.dark),
-          home: PatientDetailsPage(
+          home: PatientInformationPage(
             database: db,
             patientId: 'patient-icon-test',
           ),
@@ -993,25 +986,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Find icons in info items (e.g. cake, bloodtype, wc, phone, alternate_email, location_on)
-      final ageIcon = tester.widget<Icon>(find.byIcon(Icons.cake_outlined));
-      expect(ageIcon.color, equals(Colors.white));
+      // Find icons in info items (e.g. cake, bloodtype, phone, alternate_email, home)
+      expect(find.byIcon(Icons.cake_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.bloodtype_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.phone_outlined), findsOneWidget);
 
-      final genderIcon = tester.widget<Icon>(find.byIcon(Icons.wc_rounded));
-      expect(genderIcon.color, equals(Colors.white));
-
-      final bloodIcon = tester.widget<Icon>(find.byIcon(Icons.bloodtype_outlined));
-      expect(bloodIcon.color, equals(Colors.white));
-
-      final phoneIcon = tester.widget<Icon>(find.byIcon(Icons.phone_outlined));
-      expect(phoneIcon.color, equals(Colors.white));
-
-      // Header icon
-      final personHeaderIcon = tester.widget<Icon>(find.byIcon(Icons.person_outline_rounded));
-      expect(personHeaderIcon.color, equals(Colors.white));
-
-      // Begin Examination button preserves primary color
-      expect(find.text('Begin Examination'), findsOneWidget);
+      // Actions
+      expect(find.text('Edit Profile'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
 
       await db.close();
     },

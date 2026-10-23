@@ -75,6 +75,11 @@ flutter:
     - assets/models/pneumonia_resnet18.onnx
     - assets/models/brain_tumor_resnet18.onnx
     - assets/images/
+    - assets/images/patient info.jpg
+    - assets/images/new examination.jpg
+    - assets/images/patient analytics.jpg
+    - assets/images/medical history.jpg
+    - assets/images/examination record.jpg
     - assets/logo/bglogo.png
     - assets/logo/logo.png
     - assets/logo/Frame 1.png
