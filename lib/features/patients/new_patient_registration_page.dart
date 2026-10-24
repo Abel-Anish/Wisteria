@@ -249,13 +249,13 @@ class _NewPatientRegistrationPageState
                                 color: isDark
                                     ? Colors.transparent
                                     : colors.primary.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(
-                                  WisteriaRadius.sm,
-                                ),
+                                borderRadius: BorderRadius.zero,
                                 border: isDark
                                     ? null
                                     : Border.all(
-                                        color: colors.primary.withValues(alpha: 0.18),
+                                        color: colors.primary.withValues(
+                                          alpha: 0.18,
+                                        ),
                                       ),
                               ),
                               child: Icon(
@@ -296,12 +296,13 @@ class _NewPatientRegistrationPageState
 
                         // Form Card (Sharp Geometry)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 22,
+                          ),
                           decoration: BoxDecoration(
                             color: colors.surfaceLow,
-                            borderRadius: BorderRadius.circular(
-                              WisteriaRadius.sm,
-                            ),
+                            borderRadius: BorderRadius.zero,
                             border: Border.all(color: colors.border, width: 1),
                             boxShadow: [
                               BoxShadow(
@@ -506,9 +507,7 @@ class _NewPatientRegistrationPageState
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          _buildFieldLabel(
-                                            'Gender',
-                                          ),
+                                          _buildFieldLabel('Gender'),
                                           const SizedBox(height: 6),
                                           DropdownButtonFormField<String>(
                                             key: const Key('gender_field'),
@@ -556,9 +555,7 @@ class _NewPatientRegistrationPageState
                                   key: const Key('other_contact_field'),
                                   controller: _otherContactController,
                                   focusNode: _otherContactFocusNode,
-                                  style: TextStyle(
-                                    color: colors.textPrimary,
-                                  ),
+                                  style: TextStyle(color: colors.textPrimary),
                                   decoration: _buildInputDecoration(
                                     hint: 'Email or emergency contact',
                                     icon: Icons.alternate_email_rounded,
@@ -578,7 +575,9 @@ class _NewPatientRegistrationPageState
                                       r'\d',
                                     ).allMatches(trimmed).length;
 
-                                    final isEmail = emailRegex.hasMatch(trimmed);
+                                    final isEmail = emailRegex.hasMatch(
+                                      trimmed,
+                                    );
                                     final isPhone =
                                         phoneRegex.hasMatch(trimmed) &&
                                         digitCount >= 7;

@@ -281,12 +281,12 @@ class _WisChatPageState extends State<WisChatPage>
     if (_activeConversation != null) {
       if (_activeConversation!.title == 'New Chat' ||
           _activeConversation!.messages.isEmpty) {
-        _activeConversation!.title =
-            text.length > 28 ? '${text.substring(0, 28)}…' : text;
+        _activeConversation!.title = text.length > 28
+            ? '${text.substring(0, 28)}…'
+            : text;
       }
       _activeConversation!.updatedAt = DateTime.now();
-      _activeConversation!.messages =
-          _messages.map((m) => m.toMap()).toList();
+      _activeConversation!.messages = _messages.map((m) => m.toMap()).toList();
       _storage.saveConversations(_conversations);
     }
 
@@ -298,7 +298,7 @@ class _WisChatPageState extends State<WisChatPage>
     systemBuffer.write(
       'You are WisChat, a compassionate and knowledgeable offline medical AI assistant '
       'built into the Wisteria clinical platform. You run entirely on-device via a local '
-      'Gemma model — no data ever leaves this machine, making you safe for use with '
+      'WisChat — no data ever leaves this machine, making you safe for use with '
       'patient information.\n\n'
       '## Your Personality\n'
       '- Empathetic & calm: Speak with warmth and clarity, never alarming the user unnecessarily.\n'
@@ -407,8 +407,7 @@ class _WisChatPageState extends State<WisChatPage>
 
   void _saveCurrentConversation() {
     if (_activeConversation != null) {
-      _activeConversation!.messages =
-          _messages.map((m) => m.toMap()).toList();
+      _activeConversation!.messages = _messages.map((m) => m.toMap()).toList();
       _activeConversation!.updatedAt = DateTime.now();
       _storage.saveConversations(_conversations);
     }
@@ -697,7 +696,9 @@ class _WisChatPageState extends State<WisChatPage>
                       ),
                       decoration: BoxDecoration(
                         color: colors.primary.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.full),
+                        borderRadius: BorderRadius.circular(
+                          WisteriaRadius.full,
+                        ),
                       ),
                       child: Text(
                         '${_memories.length}',
@@ -740,23 +741,6 @@ class _WisChatPageState extends State<WisChatPage>
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                        border: Border.all(
-                          color: colors.primary.withValues(alpha: 0.28),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.psychology_rounded,
-                        size: 17,
-                        color: colors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
                     Text(
                       'Memory',
                       style: TextStyle(
@@ -1033,7 +1017,6 @@ class _WisChatPageState extends State<WisChatPage>
             colorFilter: ColorFilter.mode(
               colors.background,
               BlendMode.multiply,
-              
             ),
             child: Image.asset(
               'assets/logo/logo.png',
@@ -1164,12 +1147,9 @@ class _WisChatPageState extends State<WisChatPage>
                     focusNode: _inputFocusNode,
                     maxLines: 5,
                     minLines: 1,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: colors.textPrimary,
-                    ),
+                    style: TextStyle(fontSize: 14, color: colors.textPrimary),
                     decoration: InputDecoration(
-                      hintText: 'Message Gemma…',
+                      hintText: 'Message WisChat…',
                       hintStyle: TextStyle(color: colors.textMuted),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -1240,20 +1220,20 @@ class _ActionButtonState extends State<_ActionButton> {
           decoration: BoxDecoration(
             color: widget.isPrimary
                 ? (_isHovered
-                    ? widget.accentColor.withValues(alpha: 0.24)
-                    : widget.accentColor.withValues(alpha: 0.14))
+                      ? widget.accentColor.withValues(alpha: 0.24)
+                      : widget.accentColor.withValues(alpha: 0.14))
                 : (_isHovered
-                    ? widget.accentColor.withValues(alpha: 0.16)
-                    : Colors.transparent),
+                      ? widget.accentColor.withValues(alpha: 0.16)
+                      : Colors.transparent),
             borderRadius: BorderRadius.circular(WisteriaRadius.sm),
             border: Border.all(
               color: widget.isPrimary
                   ? (_isHovered
-                      ? widget.accentColor.withValues(alpha: 0.7)
-                      : widget.accentColor.withValues(alpha: 0.35))
+                        ? widget.accentColor.withValues(alpha: 0.7)
+                        : widget.accentColor.withValues(alpha: 0.35))
                   : (_isHovered
-                      ? widget.accentColor.withValues(alpha: 0.4)
-                      : widget.accentColor.withValues(alpha: 0.2)),
+                        ? widget.accentColor.withValues(alpha: 0.4)
+                        : widget.accentColor.withValues(alpha: 0.2)),
             ),
           ),
           child: Row(
@@ -1319,7 +1299,10 @@ class _SidebarTabButton extends StatelessWidget {
               if (badgeCount > 0) ...[
                 const SizedBox(width: 5),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: isActive
                         ? colors.primary.withValues(alpha: 0.2)
@@ -1400,9 +1383,7 @@ class _ConversationHistoryTileState extends State<_ConversationHistoryTile> {
             border: Border.all(
               color: isActive
                   ? c.primary.withValues(alpha: 0.35)
-                  : (_isHovered
-                      ? c.border
-                      : Colors.transparent),
+                  : (_isHovered ? c.border : Colors.transparent),
             ),
           ),
           child: Row(
@@ -1421,8 +1402,9 @@ class _ConversationHistoryTileState extends State<_ConversationHistoryTile> {
                       widget.conversation.title,
                       style: TextStyle(
                         fontSize: 12.5,
-                        fontWeight:
-                            isActive ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isActive
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         color: isActive ? c.primary : c.textPrimary,
                       ),
                       maxLines: 1,
@@ -1431,10 +1413,7 @@ class _ConversationHistoryTileState extends State<_ConversationHistoryTile> {
                     const SizedBox(height: 2),
                     Text(
                       _formatDate(widget.conversation.updatedAt),
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        color: c.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 10.5, color: c.textMuted),
                     ),
                   ],
                 ),
@@ -1492,8 +1471,18 @@ class _MemoryItemCardState extends State<_MemoryItemCard> {
     if (diff.inDays < 1) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -1516,8 +1505,8 @@ class _MemoryItemCardState extends State<_MemoryItemCard> {
           border: Border.all(
             color: _isHovered
                 ? (Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF4D4D4D)
-                    : c.primary.withValues(alpha: 0.35))
+                      ? const Color(0xFF4D4D4D)
+                      : c.primary.withValues(alpha: 0.35))
                 : c.border.withValues(alpha: 0.7),
           ),
         ),
@@ -1787,8 +1776,9 @@ class _MessageBubble extends StatelessWidget {
                     fontSize: 12.5,
                     fontFamily: 'monospace',
                     color: colors.primary,
-                    backgroundColor:
-                        colors.surfaceContainer.withValues(alpha: 0.6),
+                    backgroundColor: colors.surfaceContainer.withValues(
+                      alpha: 0.6,
+                    ),
                   ),
                   codeblockDecoration: BoxDecoration(
                     color: colors.surfaceContainer,
@@ -1811,8 +1801,11 @@ class _MessageBubble extends StatelessWidget {
                       left: BorderSide(color: colors.primary, width: 3),
                     ),
                   ),
-                  blockquotePadding:
-                      const EdgeInsets.only(left: 12, top: 2, bottom: 2),
+                  blockquotePadding: const EdgeInsets.only(
+                    left: 12,
+                    top: 2,
+                    bottom: 2,
+                  ),
                 ),
               ),
 
@@ -1887,16 +1880,14 @@ class _SendButtonState extends State<_SendButton> {
             color: widget.isGenerating
                 ? c.surfaceHigh
                 : _isHovered
-                    ? c.primary
-                    : c.primaryMuted,
+                ? c.primary
+                : c.primaryMuted,
             borderRadius: BorderRadius.circular(WisteriaRadius.md),
           ),
           child: Icon(
             Icons.arrow_upward_rounded,
             size: 18,
-            color: widget.isGenerating
-                ? c.textMuted
-                : c.textOnPrimary,
+            color: widget.isGenerating ? c.textMuted : c.textOnPrimary,
           ),
         ),
       ),

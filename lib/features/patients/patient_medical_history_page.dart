@@ -96,14 +96,13 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: colors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: colors.primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
     final patientName = _patient?.name ?? 'Patient';
-    final hasAnyHistory = _examinations.isNotEmpty ||
+    final hasAnyHistory =
+        _examinations.isNotEmpty ||
         _conditions.isNotEmpty ||
         _medications.isNotEmpty ||
         _priorTests.isNotEmpty;
@@ -142,10 +141,7 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
       decoration: BoxDecoration(
         color: colors.background,
         border: Border(
-          bottom: BorderSide(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.borderSubtle, width: 1),
         ),
       ),
       child: Row(
@@ -155,11 +151,7 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
             onTap: () => Navigator.of(context).pop(),
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 16,
-            width: 1,
-            color: colors.border,
-          ),
+          Container(height: 16, width: 1, color: colors.border),
           const SizedBox(width: 16),
           Text(
             'Medical History & Historical Trends',
@@ -181,29 +173,12 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF43F5E).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFF43F5E).withValues(alpha: 0.25),
-              ),
-            ),
-            child: const Icon(
-              Icons.timeline_rounded,
-              size: 32,
-              color: Color(0xFFF43F5E),
-            ),
-          ),
-          const SizedBox(height: 20),
           Text(
             'No Medical History Recorded',
             style: TextStyle(
@@ -240,26 +215,11 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: colors.surfaceLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.border),
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF43F5E).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFF43F5E).withValues(alpha: 0.3)),
-                ),
-                child: const Icon(
-                  Icons.history_edu_rounded,
-                  color: Color(0xFFF43F5E),
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,12 +283,14 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
             colors: colors,
           ),
           const SizedBox(height: 14),
-          ..._conditions.map((c) => _buildSimpleItemCard(
-                title: c.title,
-                description: c.description,
-                extraInfo: c.source != null ? 'Source: ${c.source}' : null,
-                colors: colors,
-              )),
+          ..._conditions.map(
+            (c) => _buildSimpleItemCard(
+              title: c.title,
+              description: c.description,
+              extraInfo: c.source != null ? 'Source: ${c.source}' : null,
+              colors: colors,
+            ),
+          ),
           const SizedBox(height: 24),
         ],
 
@@ -342,15 +304,18 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
             colors: colors,
           ),
           const SizedBox(height: 14),
-          ..._medications.map((m) => _buildSimpleItemCard(
-                title: m.medicineName,
-                description: [
-                  if (m.dosage != null) 'Dosage: ${m.dosage}',
-                  if (m.duration != null) 'Duration: ${m.duration}',
-                  if (m.reasonOrCondition != null) 'Condition: ${m.reasonOrCondition}',
-                ].join(' · '),
-                colors: colors,
-              )),
+          ..._medications.map(
+            (m) => _buildSimpleItemCard(
+              title: m.medicineName,
+              description: [
+                if (m.dosage != null) 'Dosage: ${m.dosage}',
+                if (m.duration != null) 'Duration: ${m.duration}',
+                if (m.reasonOrCondition != null)
+                  'Condition: ${m.reasonOrCondition}',
+              ].join(' · '),
+              colors: colors,
+            ),
+          ),
           const SizedBox(height: 24),
         ],
 
@@ -364,12 +329,14 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
             colors: colors,
           ),
           const SizedBox(height: 14),
-          ..._priorTests.map((t) => _buildSimpleItemCard(
-                title: t.testName,
-                description: t.summary ?? t.keyFindings ?? 'No summary recorded',
-                extraInfo: t.hospitalOrClinic,
-                colors: colors,
-              )),
+          ..._priorTests.map(
+            (t) => _buildSimpleItemCard(
+              title: t.testName,
+              description: t.summary ?? t.keyFindings ?? 'No summary recorded',
+              extraInfo: t.hospitalOrClinic,
+              colors: colors,
+            ),
+          ),
         ],
       ],
     );
@@ -384,16 +351,6 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
   }) {
     return Row(
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 18, color: color),
-        ),
-        const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -407,10 +364,7 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
             ),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 11.5,
-                color: colors.textMuted,
-              ),
+              style: TextStyle(fontSize: 11.5, color: colors.textMuted),
             ),
           ],
         ),
@@ -419,19 +373,16 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
   }
 
   Widget _buildEncounterTile(Examination exam, WisteriaColorPalette colors) {
-    final isMri = exam.examinationType.toUpperCase().contains('MRI') ||
-        exam.examinationType.toUpperCase().contains('BRAIN');
-
     return Container(
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.zero,
           onTap: () async {
             await Navigator.push(
               context,
@@ -448,27 +399,6 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
             padding: const EdgeInsets.all(18),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isMri
-                        ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
-                        : colors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isMri
-                          ? const Color(0xFF8B5CF6).withValues(alpha: 0.25)
-                          : colors.primary.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  child: Icon(
-                    isMri ? Icons.psychology_outlined : Icons.favorite_border_rounded,
-                    color: isMri ? const Color(0xFF8B5CF6) : colors.primary,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,10 +415,13 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
                           ),
                           const SizedBox(width: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: colors.surfaceContainer,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.zero,
                             ),
                             child: Text(
                               exam.status,
@@ -504,12 +437,10 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
                       const SizedBox(height: 4),
                       Text(
                         _formatDateTime(exam.examinationDate),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colors.textMuted,
-                        ),
+                        style: TextStyle(fontSize: 12, color: colors.textMuted),
                       ),
-                      if (exam.doctorNotes != null && exam.doctorNotes!.trim().isNotEmpty) ...[
+                      if (exam.doctorNotes != null &&
+                          exam.doctorNotes!.trim().isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
                           exam.doctorNotes!,
@@ -550,7 +481,7 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -570,10 +501,7 @@ class _PatientMedicalHistoryPageState extends State<PatientMedicalHistoryPage> {
               if (extraInfo != null)
                 Text(
                   extraInfo,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 11, color: colors.textMuted),
                 ),
             ],
           ),

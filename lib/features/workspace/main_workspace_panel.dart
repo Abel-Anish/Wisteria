@@ -75,8 +75,9 @@ class MainWorkspacePanel extends StatelessWidget {
     final isNarrow = maxWidth < 700;
     final colors = WisteriaColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final redAccent =
-        isDark ? const Color(0xFFC998A2) : const Color(0xFF96162C);
+    final redAccent = isDark
+        ? const Color(0xFFC998A2)
+        : const Color(0xFF96162C);
 
     if (isNarrow) {
       return Column(
@@ -139,9 +140,7 @@ class MainWorkspacePanel extends StatelessWidget {
 
   void _navigateToNewPatient(BuildContext context) {
     Navigator.of(context).push(
-      WisteriaPageRoute(
-        page: NewPatientRegistrationPage(database: database),
-      ),
+      WisteriaPageRoute(page: NewPatientRegistrationPage(database: database)),
     );
   }
 
@@ -180,7 +179,6 @@ class _WorkspaceHeroCard extends StatefulWidget {
 
 class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
     with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
   late final AnimationController _controller;
   late final Animation<double> _animation;
 
@@ -212,11 +210,9 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: GestureDetector(
@@ -228,21 +224,14 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
             final hoverBorderColor = isDark && !isPink
                 ? const Color(0xFF4D4D4D)
                 : widget.accentColor.withValues(alpha: 0.65);
-            final borderColor = Color.lerp(
-              colors.border,
-              hoverBorderColor,
-              t,
-            )!;
+            final borderColor = Color.lerp(colors.border, hoverBorderColor, t)!;
 
             return Transform.translate(
               offset: Offset(0, -1 * t),
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1,
-                  ),
+                  borderRadius: BorderRadius.zero,
+                  border: Border.all(color: borderColor, width: 1),
                   boxShadow: [
                     BoxShadow(
                       blurRadius: isDark ? (6 + (5 * t)) : (4 + (4 * t)),
@@ -254,7 +243,7 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -262,8 +251,8 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
                       Container(
                         color: isDark
                             ? (isPink
-                                ? const Color(0xFF1E1722)
-                                : colors.surface)
+                                  ? const Color(0xFF1E1722)
+                                  : colors.surface)
                             : colors.surface,
                       ),
                       // Background photo
@@ -286,72 +275,69 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
                               stops: const [0.0, 0.40, 0.70, 1.0],
                               colors: isDark
                                   ? (isPink
-                                      ? [
-                                          const Color(0xFF96162C).withValues(
-                                            alpha: 0.10,
-                                          ),
-                                          const Color(0xFF261922).withValues(
-                                            alpha: 0.30,
-                                          ),
-                                          const Color(0xFF20161E).withValues(
-                                            alpha: 0.58,
-                                          ),
-                                          const Color(0xFF16151E).withValues(
-                                            alpha: 0.82,
-                                          ),
-                                        ]
-                                      : [
-                                          const Color(0xFF2D2D2D).withValues(
-                                            alpha: 0.10,
-                                          ),
-                                          const Color(0xFF1D1D1D).withValues(
-                                            alpha: 0.30,
-                                          ),
-                                          const Color(0xFF141414).withValues(
-                                            alpha: 0.60,
-                                          ),
-                                          const Color(0xFF0D0D0D).withValues(
-                                            alpha: 0.85,
-                                          ),
-                                        ])
+                                        ? [
+                                            const Color(
+                                              0xFF96162C,
+                                            ).withValues(alpha: 0.10),
+                                            const Color(
+                                              0xFF261922,
+                                            ).withValues(alpha: 0.30),
+                                            const Color(
+                                              0xFF20161E,
+                                            ).withValues(alpha: 0.58),
+                                            const Color(
+                                              0xFF16151E,
+                                            ).withValues(alpha: 0.82),
+                                          ]
+                                        : [
+                                            const Color(
+                                              0xFF2D2D2D,
+                                            ).withValues(alpha: 0.10),
+                                            const Color(
+                                              0xFF1D1D1D,
+                                            ).withValues(alpha: 0.30),
+                                            const Color(
+                                              0xFF141414,
+                                            ).withValues(alpha: 0.60),
+                                            const Color(
+                                              0xFF0D0D0D,
+                                            ).withValues(alpha: 0.85),
+                                          ])
                                   : (isPink
-                                      ? [
-                                          const Color(0xFFC998A2).withValues(
-                                            alpha: 0.06,
-                                          ),
-                                          const Color(0xFFF7EBEF).withValues(
-                                            alpha: 0.18,
-                                          ),
-                                          const Color(0xFFFBF2F4).withValues(
-                                            alpha: 0.52,
-                                          ),
-                                          const Color(0xFFFFFFFF).withValues(
-                                            alpha: 0.85,
-                                          ),
-                                        ]
-                                      : [
-                                          const Color(0xFF098FA6).withValues(
-                                            alpha: 0.04,
-                                          ),
-                                          const Color(0xFFE4F0F3).withValues(
-                                            alpha: 0.18,
-                                          ),
-                                          const Color(0xFFEAF4F6).withValues(
-                                            alpha: 0.52,
-                                          ),
-                                          const Color(0xFFFFFFFF).withValues(
-                                            alpha: 0.85,
-                                          ),
-                                        ]),
+                                        ? [
+                                            const Color(
+                                              0xFFC998A2,
+                                            ).withValues(alpha: 0.06),
+                                            const Color(
+                                              0xFFF7EBEF,
+                                            ).withValues(alpha: 0.18),
+                                            const Color(
+                                              0xFFFBF2F4,
+                                            ).withValues(alpha: 0.52),
+                                            const Color(
+                                              0xFFFFFFFF,
+                                            ).withValues(alpha: 0.85),
+                                          ]
+                                        : [
+                                            const Color(
+                                              0xFF098FA6,
+                                            ).withValues(alpha: 0.04),
+                                            const Color(
+                                              0xFFE4F0F3,
+                                            ).withValues(alpha: 0.18),
+                                            const Color(
+                                              0xFFEAF4F6,
+                                            ).withValues(alpha: 0.52),
+                                            const Color(
+                                              0xFFFFFFFF,
+                                            ).withValues(alpha: 0.85),
+                                          ]),
                             ),
                           ),
                         ),
                       ),
                       // Foreground card content
-                      Padding(
-                        padding: const EdgeInsets.all(36),
-                        child: child,
-                      ),
+                      Padding(padding: const EdgeInsets.all(36), child: child),
                     ],
                   ),
                 ),
@@ -361,11 +347,6 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Icon ──
-              _buildIcon(isDark),
-
-              const Spacer(),
-
               // ── Title ──
               Text(
                 widget.title,
@@ -416,43 +397,6 @@ class _WorkspaceHeroCardState extends State<_WorkspaceHeroCard>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildIcon(bool isDark) {
-    final isPink = widget.tintColor == WisteriaColors.pink;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: isDark
-            ? (isPink
-                ? const Color(0xFF241A22).withValues(alpha: _isHovered ? 0.90 : 0.80)
-                : const Color(0xFF1D1D1D).withValues(alpha: _isHovered ? 0.95 : 0.85))
-            : Colors.white.withValues(alpha: _isHovered ? 0.95 : 0.88),
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-        border: Border.all(
-          color: isDark && !isPink
-              ? (_isHovered ? const Color(0xFF666666) : const Color(0xFF333333))
-              : (_isHovered
-                  ? widget.accentColor.withValues(alpha: 0.50)
-                  : widget.accentColor.withValues(alpha: 0.25)),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.05),
-          ),
-        ],
-      ),
-      child: Icon(
-        widget.icon,
-        size: 26,
-        color: isDark && !isPink ? Colors.white : widget.accentColor,
       ),
     );
   }

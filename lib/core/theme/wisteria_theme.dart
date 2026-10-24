@@ -330,11 +330,72 @@ class WisteriaSpacing {
 class WisteriaRadius {
   WisteriaRadius._();
 
-  static const double sm = 2;
-  static const double md = 2;
-  static const double lg = 3;
-  static const double xl = 4;
-  static const double full = 4;
+  /// 0px border radius for all standard rectangular containers and panels.
+  static const double none = 0;
+  static const double container = 0;
+  static const double sm = 0;
+  static const double md = 0;
+  static const double lg = 0;
+  static const double xl = 0;
+  static const double full = 0;
+}
+
+/// Shared Wisteria standard container styling.
+/// All standard rectangular containers across the application use:
+/// - 0px border radius (sharp, square corners)
+/// - 1px solid border
+/// - Consistent surface colors and subtle elevation
+class WisteriaContainer {
+  WisteriaContainer._();
+
+  /// Border radius for all standard rectangular containers: 0px (square corners).
+  static const double radius = 0.0;
+  static const BorderRadius borderRadius = BorderRadius.zero;
+  static const double borderWidth = 1.0;
+
+  /// Standard rectangular container decoration.
+  static BoxDecoration decoration({
+    required BuildContext context,
+    Color? color,
+    Color? borderColor,
+    Gradient? gradient,
+    List<BoxShadow>? boxShadow,
+  }) {
+    final colors = WisteriaColors.of(context);
+    return BoxDecoration(
+      color: gradient == null ? (color ?? colors.surface) : null,
+      gradient: gradient,
+      borderRadius: BorderRadius.zero,
+      border: Border.all(
+        color: borderColor ?? colors.border,
+        width: borderWidth,
+      ),
+      boxShadow: boxShadow,
+    );
+  }
+
+  /// Shape for standard rectangular dialogs, cards, sheets, or modal panels.
+  static RoundedRectangleBorder shape({Color? borderColor, double width = 1.0}) {
+    return RoundedRectangleBorder(
+      borderRadius: BorderRadius.zero,
+      side: borderColor != null
+          ? BorderSide(color: borderColor, width: width)
+          : BorderSide.none,
+    );
+  }
+
+  /// Shape with theme-aware border color.
+  static RoundedRectangleBorder shapeWithContext(
+    BuildContext context, {
+    Color? borderColor,
+    double width = 1.0,
+  }) {
+    final colors = WisteriaColors.of(context);
+    return RoundedRectangleBorder(
+      borderRadius: BorderRadius.zero,
+      side: BorderSide(color: borderColor ?? colors.border, width: width),
+    );
+  }
 }
 
 class WisteriaElevation {
@@ -460,7 +521,7 @@ ThemeData buildWisteriaTheme({Brightness brightness = Brightness.dark}) {
     dialogTheme: DialogThemeData(
       backgroundColor: palette.surfaceContainer,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         side: BorderSide(color: palette.border, width: 1),
       ),
       titleTextStyle: TextStyle(

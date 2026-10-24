@@ -140,7 +140,7 @@ class DashboardPage extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     gradient: WisteriaColors.accentGradient,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.zero,
                   ),
                   child: const Icon(
                     Icons.local_hospital_rounded,
@@ -183,7 +183,7 @@ class DashboardPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: WisteriaColors.surfaceLow,
-            borderRadius: BorderRadius.circular(WisteriaRadius.full),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: WisteriaColors.border),
           ),
           child: const Row(
@@ -462,7 +462,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
                   : (_isHovered
                       ? colors.primary.withValues(alpha: 0.12)
                       : colors.surfaceLow),
-              borderRadius: BorderRadius.circular(WisteriaRadius.md),
+              borderRadius: BorderRadius.zero,
               border: Border.all(
                 color: isDark
                     ? (_isHovered ? const Color(0xFF666666) : colors.border)

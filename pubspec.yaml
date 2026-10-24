@@ -80,6 +80,7 @@ flutter:
     - assets/images/patient analytics.jpg
     - assets/images/medical history.jpg
     - assets/images/examination record.jpg
+    - assets/images/patients/
     - assets/logo/bglogo.png
     - assets/logo/logo.png
     - assets/logo/Frame 1.png

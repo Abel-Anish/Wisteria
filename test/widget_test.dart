@@ -47,6 +47,12 @@ void main() {
         'assets/logo/Frame 1.png',
         'assets/logo/logo.svg',
         'assets/logo/Frame 1.svg',
+        'assets/images/patients/child_male.png',
+        'assets/images/patients/child_female.png',
+        'assets/images/patients/adult_male.png',
+        'assets/images/patients/adult_female.png',
+        'assets/images/patients/older_male.png',
+        'assets/images/patients/older_female.png',
       ];
 
       for (final asset in assets) {
@@ -315,6 +321,153 @@ void main() {
     await db.close();
   });
 
+  test(
+    'Verify age- and gender-based patient avatar mapping and dateOfBirth resolution',
+    () {
+      // Child: 0–17 years
+      expect(
+        getPatientAvatarCategory(age: 0, gender: 'Male'),
+        PatientAvatarCategory.childMale,
+      );
+      expect(
+        getPatientAvatarCategory(age: 17, gender: 'Female'),
+        PatientAvatarCategory.childFemale,
+      );
+
+      // Adult: 18–49 years
+      expect(
+        getPatientAvatarCategory(age: 18, gender: 'Male'),
+        PatientAvatarCategory.adultMale,
+      );
+      expect(
+        getPatientAvatarCategory(age: 49, gender: 'Female'),
+        PatientAvatarCategory.adultFemale,
+      );
+
+      // Older adult: 50+ years
+      expect(
+        getPatientAvatarCategory(age: 50, gender: 'Male'),
+        PatientAvatarCategory.olderAdultMale,
+      );
+      expect(
+        getPatientAvatarCategory(age: 82, gender: 'Female'),
+        PatientAvatarCategory.olderAdultFemale,
+      );
+
+      // Age-appropriate neutral profile when gender is missing or other
+      expect(
+        getPatientAvatarCategory(age: 25, gender: null),
+        PatientAvatarCategory.adultNeutral,
+      );
+      expect(
+        getPatientAvatarCategory(age: 25, gender: 'Other'),
+        PatientAvatarCategory.adultNeutral,
+      );
+      expect(
+        getPatientAvatarCategory(age: 10, gender: null),
+        PatientAvatarCategory.childNeutral,
+      );
+      expect(
+        getPatientAvatarCategory(age: 65, gender: null),
+        PatientAvatarCategory.olderAdultNeutral,
+      );
+
+      // Neutral fallback when age is missing
+      expect(
+        getPatientAvatarCategory(age: null, gender: 'Male'),
+        PatientAvatarCategory.neutralFallback,
+      );
+
+      // Dynamic age calculation from dateOfBirth
+      final now = DateTime.now();
+      final dobChild = DateTime(now.year - 10, now.month, now.day);
+      expect(
+        getPatientAvatarCategory(dateOfBirth: dobChild, gender: 'Female'),
+        PatientAvatarCategory.childFemale,
+      );
+
+      // DOB takes precedence over stored age
+      expect(
+        getPatientAvatarCategory(
+          dateOfBirth: dobChild,
+          age: 65, // should be overridden by 10yo dob
+          gender: 'Male',
+        ),
+        PatientAvatarCategory.childMale,
+      );
+
+      expect(
+        getPatientPortraitAsset(PatientAvatarCategory.childMale),
+        'assets/images/patients/child_male.png',
+      );
+      expect(
+        getPatientPortraitAsset(PatientAvatarCategory.adultFemale),
+        'assets/images/patients/adult_female.png',
+      );
+      expect(
+        getPatientPortraitAsset(PatientAvatarCategory.olderAdultNeutral),
+        'assets/images/patients/adult_male.png',
+      );
+    },
+  );
+
+  testWidgets(
+    'PatientPage removes patient count badge, displays age-gender avatar, and removes blood group badge on card',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final db = WisteriaDatabase(NativeDatabase.memory());
+      final repo = PatientRepository(db);
+
+      // Create a test patient with blood group, age, and gender
+      await repo.createPatient(
+        id: 'test-patient-001',
+        name: 'Eleanor Vance',
+        phoneNumber: '+1-555-014-9988',
+        age: 62,
+        bloodGroup: 'O+',
+        gender: 'Female',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWisteriaTheme(brightness: Brightness.light),
+          home: PatientPage(database: db),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // 1. Verify patient count badge is removed
+      expect(find.text('1 patient'), findsNothing);
+      expect(find.text('1 patients'), findsNothing);
+
+      // 2. Verify patient card renders with name and ID
+      expect(find.text('Eleanor Vance'), findsOneWidget);
+
+      // 3. Verify age badge is present on the card
+      expect(find.text('62 yrs'), findsOneWidget);
+
+      // 4. Verify blood group badge is NOT on the card (even though patient has O+ in DB)
+      // Note: 'Blood Group' is the dropdown filter hint, but 'O+' badge widget on card should not exist
+      expect(find.text('O+'), findsNothing);
+
+      // 5. Verify the full-card background has the Older Adult Female tooltip
+      expect(find.byType(PatientProfileBackground), findsOneWidget);
+      expect(find.byTooltip('Older Adult (Female, 50+ yrs)'), findsOneWidget);
+
+      // 6. Verify blood group data in database is completely intact
+      final allPatients = await repo.getAllPatients();
+      expect(allPatients.first.bloodGroup, equals('O+'));
+      expect(allPatients.first.gender, equals('Female'));
+      expect(allPatients.first.age, equals(62));
+
+      await db.close();
+    },
+  );
+
   testWidgets(
     'DoctorProfilePage renders 2-column layout and compact document panel',
     (tester) async {
@@ -488,16 +641,21 @@ void main() {
     expect(BrainTumorInferenceService.inputSize, equals(224));
   });
 
-  test('BrainTumorInferenceService model asset path matches pubspec declaration', () {
-    expect(
-      BrainTumorInferenceService.modelAsset,
-      equals('assets/models/brain_tumor_resnet18.onnx'),
-    );
-  });
+  test(
+    'BrainTumorInferenceService model asset path matches pubspec declaration',
+    () {
+      expect(
+        BrainTumorInferenceService.modelAsset,
+        equals('assets/models/brain_tumor_resnet18.onnx'),
+      );
+    },
+  );
 
   test('OnnxInferenceService (Pneumonia) constants remain unchanged', () {
-    expect(OnnxInferenceService.modelAsset,
-        equals('assets/models/pneumonia_resnet18.onnx'));
+    expect(
+      OnnxInferenceService.modelAsset,
+      equals('assets/models/pneumonia_resnet18.onnx'),
+    );
     expect(OnnxInferenceService.inputSize, equals(224));
     expect(OnnxInferenceService.mean[0], closeTo(0.485, 1e-6));
     expect(OnnxInferenceService.mean[1], closeTo(0.456, 1e-6));
@@ -630,15 +788,16 @@ void main() {
       await service.synchronizeCatalog();
 
       // Create test patient
-      await db.into(db.patients).insert(
-            PatientsCompanion.insert(
-              id: 'patient-456',
-              name: 'Jane Doe',
-            ),
+      await db
+          .into(db.patients)
+          .insert(
+            PatientsCompanion.insert(id: 'patient-456', name: 'Jane Doe'),
           );
 
       // Create test examination
-      await db.into(db.examinations).insert(
+      await db
+          .into(db.examinations)
+          .insert(
             ExaminationsCompanion.insert(
               id: 'exam-456',
               patientId: 'patient-456',
@@ -650,7 +809,9 @@ void main() {
           );
 
       // Create test medical image
-      await db.into(db.medicalImages).insert(
+      await db
+          .into(db.medicalImages)
+          .insert(
             MedicalImagesCompanion.insert(
               id: 'img-456',
               examinationId: 'exam-456',
@@ -665,10 +826,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildWisteriaTheme(brightness: Brightness.dark),
-          home: ExaminationDetailsPage(
-            database: db,
-            examinationId: 'exam-456',
-          ),
+          home: ExaminationDetailsPage(database: db, examinationId: 'exam-456'),
         ),
       );
       await tester.pumpAndSettle();
@@ -715,10 +873,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: buildWisteriaTheme(brightness: brightness),
-            home: PatientDetailsPage(
-              database: db,
-              patientId: 'patient-opt-a',
-            ),
+            home: PatientDetailsPage(database: db, patientId: 'patient-opt-a'),
           ),
         );
         await tester.pumpAndSettle();
@@ -774,10 +929,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildWisteriaTheme(brightness: Brightness.dark),
-          home: PatientDetailsPage(
-            database: db,
-            patientId: 'patient-nav-test',
-          ),
+          home: PatientDetailsPage(database: db, patientId: 'patient-nav-test'),
         ),
       );
       await tester.pumpAndSettle();
@@ -814,7 +966,7 @@ void main() {
   );
 
   testWidgets(
-    'CreateExaminationPage Option B displays 3 stacked horizontal specialty cards with modality and availability badges',
+    'CreateExaminationPage Option B displays 3 stacked horizontal specialty cards with availability badges',
     (tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -841,15 +993,15 @@ void main() {
 
       // Verify Option B cards
       expect(find.text('Cardiology'), findsOneWidget);
-      expect(find.text('CHEST X-RAY'), findsOneWidget);
+      expect(find.text('CHEST X-RAY'), findsNothing);
       expect(find.text('Pneumonia Detection · Chest X-Ray'), findsOneWidget);
 
       expect(find.text('Neurology'), findsOneWidget);
-      expect(find.text('BRAIN MRI'), findsOneWidget);
+      expect(find.text('BRAIN MRI'), findsNothing);
       expect(find.text('Brain Tumor Detection · MRI'), findsOneWidget);
 
       expect(find.text('Ophthalmology'), findsOneWidget);
-      expect(find.text('RETINAL / OCT'), findsOneWidget);
+      expect(find.text('RETINAL / OCT'), findsNothing);
       expect(find.text('Eye & Vision · Coming Soon'), findsOneWidget);
       expect(find.text('Unavailable'), findsOneWidget);
 
@@ -861,38 +1013,56 @@ void main() {
     },
   );
 
-  test('Verify Neutral Grayscale Dark Mode Theme specification and button color preservation', () {
-    // 1. Five Reference Neutral Shades
-    expect(WisteriaColors.darkPalette.background, const Color(0xFF0D0D0D)); // Near-black background
-    expect(WisteriaColors.darkPalette.surfaceLow, const Color(0xFF1D1D1D)); // Secondary dark surface
-    expect(WisteriaColors.darkPalette.surfaceContainer, const Color(0xFF2D2D2D)); // Elevated surface
-    expect(WisteriaColors.darkPalette.surface, const Color(0xFF3D3D3D)); // Card or panel surface
-    expect(WisteriaColors.darkPalette.surfaceHighest, const Color(0xFF4D4D4D)); // Lighter neutral surface
+  test(
+    'Verify Neutral Grayscale Dark Mode Theme specification and button color preservation',
+    () {
+      // 1. Five Reference Neutral Shades
+      expect(
+        WisteriaColors.darkPalette.background,
+        const Color(0xFF0D0D0D),
+      ); // Near-black background
+      expect(
+        WisteriaColors.darkPalette.surfaceLow,
+        const Color(0xFF1D1D1D),
+      ); // Secondary dark surface
+      expect(
+        WisteriaColors.darkPalette.surfaceContainer,
+        const Color(0xFF2D2D2D),
+      ); // Elevated surface
+      expect(
+        WisteriaColors.darkPalette.surface,
+        const Color(0xFF3D3D3D),
+      ); // Card or panel surface
+      expect(
+        WisteriaColors.darkPalette.surfaceHighest,
+        const Color(0xFF4D4D4D),
+      ); // Lighter neutral surface
 
-    // 2. White typography throughout dark mode
-    expect(WisteriaColors.darkPalette.textPrimary, const Color(0xFFFFFFFF));
-    expect(WisteriaColors.darkPalette.textSecondary, const Color(0xFFCCCCCC));
-    expect(WisteriaColors.darkPalette.textMuted, const Color(0xFF8E8E8E));
-    expect(WisteriaColors.darkPalette.textOnPrimary, const Color(0xFFFFFFFF));
+      // 2. White typography throughout dark mode
+      expect(WisteriaColors.darkPalette.textPrimary, const Color(0xFFFFFFFF));
+      expect(WisteriaColors.darkPalette.textSecondary, const Color(0xFFCCCCCC));
+      expect(WisteriaColors.darkPalette.textMuted, const Color(0xFF8E8E8E));
+      expect(WisteriaColors.darkPalette.textOnPrimary, const Color(0xFFFFFFFF));
 
-    // 3. Strict button color preservation
-    expect(WisteriaColors.darkPalette.primary, const Color(0xFF098FA6));
-    expect(WisteriaColors.darkPalette.primaryMuted, const Color(0xFF07788C));
-    expect(WisteriaColors.darkPalette.secondary, const Color(0xFF0D9488));
-    expect(WisteriaColors.darkPalette.tertiary, const Color(0xFF2DD4BF));
+      // 3. Strict button color preservation
+      expect(WisteriaColors.darkPalette.primary, const Color(0xFF098FA6));
+      expect(WisteriaColors.darkPalette.primaryMuted, const Color(0xFF07788C));
+      expect(WisteriaColors.darkPalette.secondary, const Color(0xFF0D9488));
+      expect(WisteriaColors.darkPalette.tertiary, const Color(0xFF2DD4BF));
 
-    // 4. Neutral borders and focus
-    expect(WisteriaColors.darkPalette.border, const Color(0xFF333333));
-    expect(WisteriaColors.darkPalette.borderSubtle, const Color(0xFF222222));
-    expect(WisteriaColors.darkPalette.borderFocus, const Color(0xFF6E6E6E));
+      // 4. Neutral borders and focus
+      expect(WisteriaColors.darkPalette.border, const Color(0xFF333333));
+      expect(WisteriaColors.darkPalette.borderSubtle, const Color(0xFF222222));
+      expect(WisteriaColors.darkPalette.borderFocus, const Color(0xFF6E6E6E));
 
-    // 5. Light mode preservation
-    expect(WisteriaColors.lightPalette.background, const Color(0xFFF0F5F6));
-    expect(WisteriaColors.lightPalette.surface, const Color(0xFFFFFFFF));
-    expect(WisteriaColors.lightPalette.primary, const Color(0xFF098FA6));
-    expect(WisteriaColors.lightPalette.primaryMuted, const Color(0xFF07788C));
-    expect(WisteriaColors.lightPalette.textPrimary, const Color(0xFF1E293B));
-  });
+      // 5. Light mode preservation
+      expect(WisteriaColors.lightPalette.background, const Color(0xFFF0F5F6));
+      expect(WisteriaColors.lightPalette.surface, const Color(0xFFFFFFFF));
+      expect(WisteriaColors.lightPalette.primary, const Color(0xFF098FA6));
+      expect(WisteriaColors.lightPalette.primaryMuted, const Color(0xFF07788C));
+      expect(WisteriaColors.lightPalette.textPrimary, const Color(0xFF1E293B));
+    },
+  );
   testWidgets(
     'Patient gender field persists across create, update, and PatientDetailsPage display',
     (tester) async {
@@ -1021,10 +1191,14 @@ void main() {
 
       // Top bar patient pill icon is white
       final topPatientIcon = tester.widget<Icon>(
-        find.descendant(
-          of: find.byType(AppBar).evaluate().isEmpty ? find.byType(Scaffold) : find.byType(AppBar),
-          matching: find.byIcon(Icons.person_outline_rounded),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(AppBar).evaluate().isEmpty
+                  ? find.byType(Scaffold)
+                  : find.byType(AppBar),
+              matching: find.byIcon(Icons.person_outline_rounded),
+            )
+            .first,
       );
       expect(topPatientIcon.color, equals(Colors.white));
 
@@ -1032,38 +1206,51 @@ void main() {
       await tester.tap(find.text('Select Specialty').first);
       await tester.pumpAndSettle();
 
-      // Active specialty banner icon (favorite_rounded) is white
-      final specialtyIcon = tester.widget<Icon>(find.byIcon(Icons.favorite_rounded));
-      expect(specialtyIcon.color, equals(Colors.white));
+      // Specialty banner no longer displays a decorative category icon.
+      expect(find.byIcon(Icons.favorite_rounded), findsNothing);
 
       // Examination Setup section icon (assignment_outlined) is white
-      final examSetupIcon = tester.widget<Icon>(find.byIcon(Icons.assignment_outlined));
+      final examSetupIcon = tester.widget<Icon>(
+        find.byIcon(Icons.assignment_outlined),
+      );
       expect(examSetupIcon.color, equals(Colors.white));
 
       // Patient identity icon in Stage A is white
-      final patientIcons = tester.widgetList<Icon>(find.byIcon(Icons.person_outline_rounded));
+      final patientIcons = tester.widgetList<Icon>(
+        find.byIcon(Icons.person_outline_rounded),
+      );
       for (final icon in patientIcons) {
         expect(icon.color, equals(Colors.white));
       }
 
       // Medical Image header icon is white
-      final medicalImageIcon = tester.widget<Icon>(find.byIcon(Icons.image_outlined));
+      final medicalImageIcon = tester.widget<Icon>(
+        find.byIcon(Icons.image_outlined),
+      );
       expect(medicalImageIcon.color, equals(Colors.white));
 
       // Image upload icon (add_photo_alternate_outlined) is white
-      final uploadIcon = tester.widget<Icon>(find.byIcon(Icons.add_photo_alternate_outlined));
+      final uploadIcon = tester.widget<Icon>(
+        find.byIcon(Icons.add_photo_alternate_outlined),
+      );
       expect(uploadIcon.color, equals(Colors.white));
 
       // AI Analysis section icon (memory_rounded) is white
-      final aiAnalysisIcon = tester.widget<Icon>(find.byIcon(Icons.memory_rounded));
+      final aiAnalysisIcon = tester.widget<Icon>(
+        find.byIcon(Icons.memory_rounded),
+      );
       expect(aiAnalysisIcon.color, equals(Colors.white));
 
       // ONNX model icon (developer_board_rounded) is white
-      final onnxIcon = tester.widget<Icon>(find.byIcon(Icons.developer_board_rounded));
+      final onnxIcon = tester.widget<Icon>(
+        find.byIcon(Icons.developer_board_rounded),
+      );
       expect(onnxIcon.color, equals(Colors.white));
 
       // Clinical disclaimer icon (verified_user_outlined) is white
-      final disclaimerIcon = tester.widget<Icon>(find.byIcon(Icons.verified_user_outlined));
+      final disclaimerIcon = tester.widget<Icon>(
+        find.byIcon(Icons.verified_user_outlined),
+      );
       expect(disclaimerIcon.color, equals(Colors.white));
 
       // Buttons preserved: Browse Image File button is present

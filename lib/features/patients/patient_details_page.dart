@@ -139,9 +139,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: colors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: colors.primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -176,29 +174,41 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
 
             // ── Main Dashboard Layout: Exactly Five Image Cards ──
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 24, 28, 36),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1320),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
+              child: LayoutBuilder(
+                builder: (context, viewportConstraints) {
+                  final desktopCardHeight =
+                      ((viewportConstraints.maxHeight - 60 - 20) / 2).clamp(
+                        225.0,
+                        300.0,
+                      );
 
-                        if (width >= 960) {
-                          // Desktop layout: Row 1 has 2 cards, Row 2 has 3 cards
-                          return _buildDesktopLayout();
-                        } else if (width >= 640) {
-                          // Tablet layout: 2-column adaptive layout
-                          return _buildTabletLayout();
-                        } else {
-                          // Mobile/Narrow layout: 1-column stacked cards
-                          return _buildMobileLayout();
-                        }
-                      },
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 24, 28, 36),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1320),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final width = constraints.maxWidth;
+
+                            if (width >= 960) {
+                              // Desktop layout: Row 1 has 2 cards, Row 2 has 3 cards
+                              return _buildDesktopLayout(
+                                cardHeight: desktopCardHeight,
+                              );
+                            } else if (width >= 640) {
+                              // Tablet layout: 2-column adaptive layout
+                              return _buildTabletLayout();
+                            } else {
+                              // Mobile/Narrow layout: 1-column stacked cards
+                              return _buildMobileLayout();
+                            }
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ],
@@ -213,10 +223,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       decoration: BoxDecoration(
         color: colors.background,
         border: Border(
-          bottom: BorderSide(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.borderSubtle, width: 1),
         ),
       ),
       child: Row(
@@ -226,11 +233,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
             onTap: () => Navigator.of(context).pop(),
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 16,
-            width: 1,
-            color: colors.border,
-          ),
+          Container(height: 16, width: 1, color: colors.border),
           const SizedBox(width: 16),
           Text(
             'Patient Record Overview',
@@ -247,38 +250,26 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   }
 
   // ── Desktop Layout: 2 Cards Row 1, 3 Cards Row 2 ──
-  Widget _buildDesktopLayout() {
-    const cardHeight = 225.0;
-
+  Widget _buildDesktopLayout({required double cardHeight}) {
     return Column(
       children: [
         // Row 1: Patient Information & New Examination
         Row(
           children: [
-            Expanded(
-              child: _buildPatientInfoCard(height: cardHeight),
-            ),
+            Expanded(child: _buildPatientInfoCard(height: cardHeight)),
             const SizedBox(width: 20),
-            Expanded(
-              child: _buildNewExaminationCard(height: cardHeight),
-            ),
+            Expanded(child: _buildNewExaminationCard(height: cardHeight)),
           ],
         ),
         const SizedBox(height: 20),
         // Row 2: Patient Analytics, Medical History & Trends, Examination Records
         Row(
           children: [
-            Expanded(
-              child: _buildPatientAnalyticsCard(height: cardHeight),
-            ),
+            Expanded(child: _buildPatientAnalyticsCard(height: cardHeight)),
             const SizedBox(width: 20),
-            Expanded(
-              child: _buildMedicalHistoryCard(height: cardHeight),
-            ),
+            Expanded(child: _buildMedicalHistoryCard(height: cardHeight)),
             const SizedBox(width: 20),
-            Expanded(
-              child: _buildExaminationRecordsCard(height: cardHeight),
-            ),
+            Expanded(child: _buildExaminationRecordsCard(height: cardHeight)),
           ],
         ),
       ],
@@ -293,25 +284,17 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       children: [
         Row(
           children: [
-            Expanded(
-              child: _buildPatientInfoCard(height: cardHeight),
-            ),
+            Expanded(child: _buildPatientInfoCard(height: cardHeight)),
             const SizedBox(width: 16),
-            Expanded(
-              child: _buildNewExaminationCard(height: cardHeight),
-            ),
+            Expanded(child: _buildNewExaminationCard(height: cardHeight)),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(
-              child: _buildPatientAnalyticsCard(height: cardHeight),
-            ),
+            Expanded(child: _buildPatientAnalyticsCard(height: cardHeight)),
             const SizedBox(width: 16),
-            Expanded(
-              child: _buildMedicalHistoryCard(height: cardHeight),
-            ),
+            Expanded(child: _buildMedicalHistoryCard(height: cardHeight)),
           ],
         ),
         const SizedBox(height: 16),
@@ -346,7 +329,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       imagePath: 'assets/images/patient info.jpg',
       title: 'Patient Information',
       description: 'Clinical demographic profile & contact details',
-      badgeIcon: Icons.person_rounded,
       badgeColor: const Color(0xFF0284C7),
       height: height,
       onTap: _openPatientInfo,
@@ -360,7 +342,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       imagePath: 'assets/images/new examination.jpg',
       title: 'New Examination',
       description: 'AI-assisted clinical evaluation & reporting',
-      badgeIcon: Icons.add_circle_outline_rounded,
       badgeColor: const Color(0xFF8B5CF6),
       height: height,
       onTap: _openNewExamination,
@@ -375,7 +356,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       title: 'Patient Analytics',
       description:
           'Longitudinal statistical summaries, automated diagnostic trends, and AI risk stratification',
-      badgeIcon: Icons.bar_chart_rounded,
       badgeColor: const Color(0xFF0891B2),
       height: height,
       onTap: _openPatientAnalytics,
@@ -390,7 +370,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       title: 'Medical History & Trends',
       description:
           'Historical encounter timelines, vital trend tracking, and multi-modality historical comparison',
-      badgeIcon: Icons.show_chart_rounded,
       badgeColor: const Color(0xFFF43F5E),
       height: height,
       onTap: _openMedicalHistory,
@@ -404,7 +383,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       imagePath: 'assets/images/examination record.jpg',
       title: 'Examination Records',
       description: 'Recorded examinations with AI diagnostic findings',
-      badgeIcon: Icons.assignment_outlined,
       badgeColor: const Color(0xFF0D9488),
       height: height,
       onTap: _openExaminationRecords,

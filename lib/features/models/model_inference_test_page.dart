@@ -198,7 +198,7 @@ class _ModelInferenceTestPageState extends State<ModelInferenceTestPage> {
                 ),
                 const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.zero,
                   child: Image.file(
                     _selectedImage!,
                     height: 280,
@@ -351,7 +351,7 @@ class _ModelInferenceTestPageState extends State<ModelInferenceTestPage> {
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: WisteriaColors.success.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.zero,
                 ),
                 child: const Text(
                   'LOCAL',

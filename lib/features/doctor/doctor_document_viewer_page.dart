@@ -213,7 +213,7 @@ class _DoctorDocumentViewerPageState extends State<DoctorDocumentViewerPage> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: colors.surfaceLowest,
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.borderSubtle),
           ),
           child: Text(
@@ -330,7 +330,7 @@ class _DoctorDocumentViewerPageState extends State<DoctorDocumentViewerPage> {
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
           color: colors.surfaceLow,
-          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+          borderRadius: BorderRadius.zero,
           border: Border.all(color: colors.border),
         ),
         child: Column(
@@ -341,7 +341,7 @@ class _DoctorDocumentViewerPageState extends State<DoctorDocumentViewerPage> {
               height: 56,
               decoration: BoxDecoration(
                 color: WisteriaColors.error.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
               ),
               child: Icon(icon, size: 28, color: WisteriaColors.error),
             ),
@@ -414,7 +414,7 @@ class _ControlButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+          borderRadius: BorderRadius.zero,
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(

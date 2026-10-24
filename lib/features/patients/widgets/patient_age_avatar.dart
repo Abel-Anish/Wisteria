@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/wisteria_theme.dart';
 
-/// Centralized age categories for patient avatar selection.
-enum PatientAgeCategory {
-  child,
-  teenager,
-  adult,
-  senior,
-}
+/// Legacy centralized age categories for patient avatar selection (preserved for backwards compatibility).
+enum PatientAgeCategory { child, teenager, adult, senior }
 
-/// Centralized deterministic age-to-category mapping.
+/// Legacy deterministic age-to-category mapping.
 PatientAgeCategory getPatientAgeCategory(int? age) {
   if (age == null) return PatientAgeCategory.adult;
   if (age <= 12) return PatientAgeCategory.child;
@@ -18,7 +13,7 @@ PatientAgeCategory getPatientAgeCategory(int? age) {
   return PatientAgeCategory.senior;
 }
 
-/// Returns a human-readable label for the age category.
+/// Returns a human-readable label for the legacy age category.
 String getAgeCategoryLabel(PatientAgeCategory category) {
   switch (category) {
     case PatientAgeCategory.child:
@@ -32,245 +27,231 @@ String getAgeCategoryLabel(PatientAgeCategory category) {
   }
 }
 
-/// Theme-aware, age-appropriate offline vector avatar for patient records.
+/// Standardized age groups for clinical patient avatars:
+/// - Child: 0–17 years
+/// - Adult: 18–49 years
+/// - Older adult: 50 years and above
+enum PatientAgeGroup { child, adult, olderAdult }
+
+/// Supported genders for dynamic patient avatars.
+enum PatientAvatarGender { male, female }
+
+/// Six age- and gender-based patient avatar categories plus neutral fallback.
+enum PatientAvatarCategory {
+  childMale,
+  childFemale,
+  adultMale,
+  adultFemale,
+  olderAdultMale,
+  olderAdultFemale,
+  childNeutral,
+  adultNeutral,
+  olderAdultNeutral,
+  neutralFallback,
+}
+
+/// Resolves patient age.
+/// Calculates age dynamically from [dateOfBirth] when available.
+/// If only [age] is stored, that value is used.
+int? resolvePatientAge({DateTime? dateOfBirth, int? age}) {
+  if (dateOfBirth != null) {
+    final now = DateTime.now();
+    int calculated = now.year - dateOfBirth.year;
+    if (now.month < dateOfBirth.month ||
+        (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
+      calculated--;
+    }
+    return calculated >= 0 ? calculated : 0;
+  }
+  return age;
+}
+
+/// Maps an age in years to its respective [PatientAgeGroup].
+PatientAgeGroup? getPatientAgeGroup(int? age) {
+  if (age == null || age < 0) return null;
+  if (age <= 17) return PatientAgeGroup.child;
+  if (age <= 49) return PatientAgeGroup.adult;
+  return PatientAgeGroup.olderAdult;
+}
+
+/// Parses gender string into [PatientAvatarGender].
+PatientAvatarGender? parsePatientGender(String? gender) {
+  if (gender == null) return null;
+  final g = gender.trim().toLowerCase();
+  if (g == 'male' || g == 'm') return PatientAvatarGender.male;
+  if (g == 'female' || g == 'f') return PatientAvatarGender.female;
+  return null;
+}
+
+/// Selects the appropriate avatar category based on age/DOB and gender.
+/// If gender or age/DOB is missing or unrecognized, returns [PatientAvatarCategory.neutralFallback].
+PatientAvatarCategory getPatientAvatarCategory({
+  DateTime? dateOfBirth,
+  int? age,
+  String? gender,
+}) {
+  final resolvedAge = resolvePatientAge(dateOfBirth: dateOfBirth, age: age);
+  final parsedGender = parsePatientGender(gender);
+
+  if (resolvedAge == null) {
+    return PatientAvatarCategory.neutralFallback;
+  }
+
+  if (parsedGender == null) {
+    if (resolvedAge <= 17) return PatientAvatarCategory.childNeutral;
+    if (resolvedAge <= 49) return PatientAvatarCategory.adultNeutral;
+    return PatientAvatarCategory.olderAdultNeutral;
+  }
+
+  if (resolvedAge <= 17) {
+    return parsedGender == PatientAvatarGender.male
+        ? PatientAvatarCategory.childMale
+        : PatientAvatarCategory.childFemale;
+  } else if (resolvedAge <= 49) {
+    return parsedGender == PatientAvatarGender.male
+        ? PatientAvatarCategory.adultMale
+        : PatientAvatarCategory.adultFemale;
+  } else {
+    return parsedGender == PatientAvatarGender.male
+        ? PatientAvatarCategory.olderAdultMale
+        : PatientAvatarCategory.olderAdultFemale;
+  }
+}
+
+/// Returns a descriptive human-readable label for the avatar category.
+String getAvatarCategoryLabel(PatientAvatarCategory category) {
+  switch (category) {
+    case PatientAvatarCategory.childMale:
+      return 'Child (Male, 0–17 yrs)';
+    case PatientAvatarCategory.childFemale:
+      return 'Child (Female, 0–17 yrs)';
+    case PatientAvatarCategory.adultMale:
+      return 'Adult (Male, 18–49 yrs)';
+    case PatientAvatarCategory.adultFemale:
+      return 'Adult (Female, 18–49 yrs)';
+    case PatientAvatarCategory.olderAdultMale:
+      return 'Older Adult (Male, 50+ yrs)';
+    case PatientAvatarCategory.olderAdultFemale:
+      return 'Older Adult (Female, 50+ yrs)';
+    case PatientAvatarCategory.childNeutral:
+      return 'Child (Gender not provided, 0–17 yrs)';
+    case PatientAvatarCategory.adultNeutral:
+      return 'Adult (Gender not provided, 18–49 yrs)';
+    case PatientAvatarCategory.olderAdultNeutral:
+      return 'Older Adult (Gender not provided, 50+ yrs)';
+    case PatientAvatarCategory.neutralFallback:
+      return 'Patient Profile';
+  }
+}
+
+String getPatientPortraitAsset(PatientAvatarCategory category) {
+  switch (category) {
+    case PatientAvatarCategory.childMale:
+      return 'assets/images/patients/child_male.png';
+    case PatientAvatarCategory.childFemale:
+      return 'assets/images/patients/child_female.png';
+    case PatientAvatarCategory.adultMale:
+      return 'assets/images/patients/adult_male.png';
+    case PatientAvatarCategory.adultFemale:
+      return 'assets/images/patients/adult_female.png';
+    case PatientAvatarCategory.olderAdultMale:
+      return 'assets/images/patients/older_male.png';
+    case PatientAvatarCategory.olderAdultFemale:
+      return 'assets/images/patients/older_female.png';
+    case PatientAvatarCategory.childNeutral:
+    case PatientAvatarCategory.adultNeutral:
+    case PatientAvatarCategory.olderAdultNeutral:
+    case PatientAvatarCategory.neutralFallback:
+      return 'assets/images/patients/adult_male.png';
+  }
+}
+
+/// Theme-aware, age- and gender-based photographic portrait for patient records.
 class PatientAgeAvatar extends StatelessWidget {
   final int? age;
+  final String? gender;
+  final DateTime? dateOfBirth;
   final double size;
-  final Color? customAccent;
 
   const PatientAgeAvatar({
     super.key,
-    required this.age,
+    this.age,
+    this.gender,
+    this.dateOfBirth,
     this.size = 48.0,
-    this.customAccent,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
-    final category = getPatientAgeCategory(age);
-    final accent = customAccent ?? colors.primary;
-
+    final category = getPatientAvatarCategory(
+      dateOfBirth: dateOfBirth,
+      age: age,
+      gender: gender,
+    );
     return Tooltip(
-      message: getAgeCategoryLabel(category),
+      message: getAvatarCategoryLabel(category),
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-          border: Border.all(
-            color: accent.withValues(alpha: 0.25),
-            width: 1,
-          ),
+          border: Border.all(color: colors.border),
+          color: colors.surfaceLow,
         ),
-        child: CustomPaint(
-          size: Size(size, size),
-          painter: _AvatarPainter(
-            category: category,
-            accentColor: accent,
-            textColor: colors.textPrimary,
-            mutedColor: colors.textSecondary,
-            borderColor: colors.border,
-          ),
+        child: Image.asset(
+          getPatientPortraitAsset(category),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              'assets/images/patient info.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  ColoredBox(color: colors.surfaceLow),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _AvatarPainter extends CustomPainter {
-  final PatientAgeCategory category;
-  final Color accentColor;
-  final Color textColor;
-  final Color mutedColor;
-  final Color borderColor;
+/// Full-surface photographic patient portrait for patient cards.
+class PatientProfileBackground extends StatelessWidget {
+  final int? age;
+  final String? gender;
+  final DateTime? dateOfBirth;
 
-  _AvatarPainter({
-    required this.category,
-    required this.accentColor,
-    required this.textColor,
-    required this.mutedColor,
-    required this.borderColor,
+  const PatientProfileBackground({
+    super.key,
+    this.age,
+    this.gender,
+    this.dateOfBirth,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
+  Widget build(BuildContext context) {
+    final colors = WisteriaColors.of(context);
+    final category = getPatientAvatarCategory(
+      dateOfBirth: dateOfBirth,
+      age: age,
+      gender: gender,
+    );
 
-    final fillPaint = Paint()
-      ..color = accentColor.withValues(alpha: 0.85)
-      ..style = PaintingStyle.fill;
-
-    final outlinePaint = Paint()
-      ..color = accentColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final secondaryPaint = Paint()
-      ..color = mutedColor.withValues(alpha: 0.6)
-      ..style = PaintingStyle.fill;
-
-    switch (category) {
-      case PatientAgeCategory.child:
-        // Child: Rounder smaller head, lower shoulders, playful medical star/badge accent
-        final headRadius = size.width * 0.18;
-        final headCenter = Offset(cx, cy - size.height * 0.14);
-        canvas.drawCircle(headCenter, headRadius, fillPaint);
-
-        // Child shoulders
-        final bodyPath = Path()
-          ..moveTo(cx - size.width * 0.28, size.height * 0.82)
-          ..quadraticBezierTo(
-            cx - size.width * 0.22,
-            cy + size.height * 0.12,
-            cx,
-            cy + size.height * 0.12,
-          )
-          ..quadraticBezierTo(
-            cx + size.width * 0.22,
-            cy + size.height * 0.12,
-            cx + size.width * 0.28,
-            size.height * 0.82,
-          )
-          ..close();
-        canvas.drawPath(bodyPath, fillPaint);
-
-        // Child badge (small star dot)
-        canvas.drawCircle(
-          Offset(cx + headRadius * 0.8, headCenter.dy - headRadius * 0.3),
-          size.width * 0.04,
-          secondaryPaint,
-        );
-        break;
-
-      case PatientAgeCategory.teenager:
-        // Teenager: Sleek proportioned head with stylized modern posture haircut line
-        final headRadius = size.width * 0.19;
-        final headCenter = Offset(cx, cy - size.height * 0.15);
-        canvas.drawCircle(headCenter, headRadius, fillPaint);
-
-        // Hair / profile sweep accent
-        final hairPath = Path()
-          ..moveTo(cx - headRadius, headCenter.dy - headRadius * 0.2)
-          ..cubicTo(
-            cx - headRadius * 0.5,
-            headCenter.dy - headRadius * 1.3,
-            cx + headRadius * 0.5,
-            headCenter.dy - headRadius * 1.3,
-            cx + headRadius * 1.1,
-            headCenter.dy - headRadius * 0.3,
-          )
-          ..lineTo(cx + headRadius * 0.8, headCenter.dy - headRadius * 0.8)
-          ..close();
-        canvas.drawPath(hairPath, secondaryPaint);
-
-        // Teen shoulders
-        final bodyPath = Path()
-          ..moveTo(cx - size.width * 0.32, size.height * 0.85)
-          ..quadraticBezierTo(
-            cx - size.width * 0.24,
-            cy + size.height * 0.10,
-            cx,
-            cy + size.height * 0.10,
-          )
-          ..quadraticBezierTo(
-            cx + size.width * 0.24,
-            cy + size.height * 0.10,
-            cx + size.width * 0.32,
-            size.height * 0.85,
-          )
-          ..close();
-        canvas.drawPath(bodyPath, fillPaint);
-        break;
-
-      case PatientAgeCategory.adult:
-        // Adult: Classic crisp medical profile with lapel V neck
-        final headRadius = size.width * 0.20;
-        final headCenter = Offset(cx, cy - size.height * 0.16);
-        canvas.drawCircle(headCenter, headRadius, fillPaint);
-
-        // Adult shoulders & V-neck collar
-        final bodyPath = Path()
-          ..moveTo(cx - size.width * 0.35, size.height * 0.88)
-          ..quadraticBezierTo(
-            cx - size.width * 0.28,
-            cy + size.height * 0.08,
-            cx,
-            cy + size.height * 0.08,
-          )
-          ..quadraticBezierTo(
-            cx + size.width * 0.28,
-            cy + size.height * 0.08,
-            cx + size.width * 0.35,
-            size.height * 0.88,
-          )
-          ..close();
-        canvas.drawPath(bodyPath, fillPaint);
-
-        // V-neck notch cut out
-        final vNotch = Path()
-          ..moveTo(cx - size.width * 0.08, cy + size.height * 0.08)
-          ..lineTo(cx, cy + size.height * 0.28)
-          ..lineTo(cx + size.width * 0.08, cy + size.height * 0.08)
-          ..close();
-        final notchPaint = Paint()
-          ..color = accentColor.withValues(alpha: 0.15)
-          ..style = PaintingStyle.fill;
-        canvas.drawPath(vNotch, notchPaint);
-        break;
-
-      case PatientAgeCategory.senior:
-        // Senior: Mature profile with classic collar fold and glasses/silver hair accent line
-        final headRadius = size.width * 0.20;
-        final headCenter = Offset(cx, cy - size.height * 0.16);
-        canvas.drawCircle(headCenter, headRadius, fillPaint);
-
-        // Hair arc top accent (mature silver frame effect)
-        final hairArc = Path()
-          ..addArc(
-            Rect.fromCircle(center: headCenter, radius: headRadius + 1.5),
-            3.6,
-            2.2,
+    return Tooltip(
+      message: getAvatarCategoryLabel(category),
+      child: Image.asset(
+        getPatientPortraitAsset(category),
+        fit: BoxFit.cover,
+        cacheWidth: 900,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/images/patient info.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                ColoredBox(color: colors.surfaceLow),
           );
-        canvas.drawPath(hairArc, outlinePaint);
-
-        // Senior shoulders
-        final bodyPath = Path()
-          ..moveTo(cx - size.width * 0.36, size.height * 0.88)
-          ..quadraticBezierTo(
-            cx - size.width * 0.28,
-            cy + size.height * 0.08,
-            cx,
-            cy + size.height * 0.08,
-          )
-          ..quadraticBezierTo(
-            cx + size.width * 0.28,
-            cy + size.height * 0.08,
-            cx + size.width * 0.36,
-            size.height * 0.88,
-          )
-          ..close();
-        canvas.drawPath(bodyPath, fillPaint);
-
-        // Glasses bridge / profile line
-        final glassesBridge = Path()
-          ..moveTo(cx - size.width * 0.10, headCenter.dy)
-          ..lineTo(cx + size.width * 0.10, headCenter.dy);
-        final gPaint = Paint()
-          ..color = mutedColor.withValues(alpha: 0.9)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-        canvas.drawPath(glassesBridge, gPaint);
-        break;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _AvatarPainter oldDelegate) {
-    return oldDelegate.category != category ||
-        oldDelegate.accentColor != accentColor ||
-        oldDelegate.textColor != textColor;
+        },
+      ),
+    );
   }
 }

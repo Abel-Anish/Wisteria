@@ -4,13 +4,11 @@ import '../../../core/theme/wisteria_theme.dart';
 /// Interactive, image-based card for the Patient Dashboard.
 ///
 /// Features a background JPG image with contrast gradient,
-/// distinctively colored badge icon, title, description, and smooth
-/// hover animations for desktop.
+/// title, description, and smooth hover animations for desktop.
 class PatientDashboardCard extends StatefulWidget {
   final String imagePath;
   final String title;
   final String description;
-  final IconData badgeIcon;
   final Color badgeColor;
   final VoidCallback onTap;
   final double? height;
@@ -20,7 +18,6 @@ class PatientDashboardCard extends StatefulWidget {
     required this.imagePath,
     required this.title,
     required this.description,
-    required this.badgeIcon,
     required this.badgeColor,
     required this.onTap,
     this.height,
@@ -76,22 +73,19 @@ class _PatientDashboardCardState extends State<PatientDashboardCard>
       child: AnimatedBuilder(
         animation: _animController,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
         child: Container(
           height: widget.height,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.zero,
             border: Border.all(
               color: _isHovered
                   ? widget.badgeColor.withValues(alpha: 0.8)
                   : (isDark
-                      ? const Color(0xFF2E3846)
-                      : colors.border.withValues(alpha: 0.9)),
-              width: _isHovered ? 1.6 : 1.2,
+                        ? const Color(0xFF2E3846)
+                        : colors.border.withValues(alpha: 0.9)),
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -104,7 +98,7 @@ class _PatientDashboardCardState extends State<PatientDashboardCard>
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.5),
+            borderRadius: BorderRadius.zero,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -114,12 +108,9 @@ class _PatientDashboardCardState extends State<PatientDashboardCard>
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: isDark ? const Color(0xFF161F2E) : const Color(0xFFE2E8F0),
-                      child: Icon(
-                        widget.badgeIcon,
-                        size: 48,
-                        color: colors.textMuted.withValues(alpha: 0.3),
-                      ),
+                      color: isDark
+                          ? const Color(0xFF161F2E)
+                          : const Color(0xFFE2E8F0),
                     );
                   },
                 ),
@@ -155,35 +146,13 @@ class _PatientDashboardCardState extends State<PatientDashboardCard>
                   ),
                 ),
 
-                // 4. Foreground content: Badge, Title, Description
+                // 4. Foreground content: Title and Description
                 Padding(
                   padding: const EdgeInsets.all(22),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Badge icon
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: widget.badgeColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: widget.badgeColor.withValues(alpha: 0.40),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          widget.badgeIcon,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-
                       // Text info
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,7 +207,7 @@ class _PatientDashboardCardState extends State<PatientDashboardCard>
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(16.5),
+                    borderRadius: BorderRadius.zero,
                     splashColor: widget.badgeColor.withValues(alpha: 0.15),
                     highlightColor: widget.badgeColor.withValues(alpha: 0.08),
                     onTap: widget.onTap,

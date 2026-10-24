@@ -148,11 +148,13 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         if (version == null) continue;
         final catalogEntry = SystemModelCatalog.getById(model.id);
         if (catalogEntry == null || !catalogEntry.isSupported) continue;
-        choices.add(_InstalledModelChoice(
-          model: model,
-          version: version,
-          catalog: catalogEntry,
-        ));
+        choices.add(
+          _InstalledModelChoice(
+            model: model,
+            version: version,
+            catalog: catalogEntry,
+          ),
+        );
       }
       if (!mounted) return;
       setState(() {
@@ -246,7 +248,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       if (_savedImageId == null) {
         final extension =
             _selectedImageOriginalName?.split('.').last.toLowerCase() ??
-                'unknown';
+            'unknown';
 
         final savedPath = await _imageStorage.saveImage(
           patientId: widget.patientId,
@@ -317,10 +319,11 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     try {
       // Determine which model produced the result and persist accordingly.
       final modelId = _activeModelId ?? _bundledModelId!;
-      final versionId = _installedModels
-          .where((m) => m.model.id == modelId)
-          .map((m) => m.version.id)
-          .firstOrNull ??
+      final versionId =
+          _installedModels
+              .where((m) => m.model.id == modelId)
+              .map((m) => m.version.id)
+              .firstOrNull ??
           (_isBrainTumorActive
               ? MedicalModelRepository.brainTumorVersionId
               : _bundledVersionId!);
@@ -407,6 +410,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       builder: (context) {
         final dlgColors = WisteriaColors.of(context);
         return AlertDialog(
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           backgroundColor: dlgColors.surfaceContainer,
           title: Text(
             'Discard Examination?',
@@ -539,24 +543,19 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       decoration: BoxDecoration(
         color: colors.background,
         border: Border(
-          bottom: BorderSide(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.borderSubtle, width: 1),
         ),
       ),
       child: Row(
         children: [
           WisteriaBackButton(
-            label: _selectedSpecialty != null ? 'Specialties' : 'Patient Details',
+            label: _selectedSpecialty != null
+                ? 'Specialties'
+                : 'Patient Details',
             onTap: _handleBackNavigation,
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 16,
-            width: 1,
-            color: colors.border,
-          ),
+          Container(height: 16, width: 1, color: colors.border),
           const SizedBox(width: 16),
           Text(
             'New Clinical Examination',
@@ -573,7 +572,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: colors.surfaceContainer,
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              borderRadius: BorderRadius.zero,
               border: Border.all(color: colors.border),
             ),
             child: Row(
@@ -614,7 +613,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         description:
             'Automated ResNet-18 neural network analysis for pulmonary opacity, consolidation, and acute bacterial or viral pneumonia screening.',
         imagePath: 'assets/images/cardiology.jpg',
-        modality: 'CHEST X-RAY',
         icon: Icons.favorite_rounded,
         accentColor: const Color(0xFF098FA6),
         isComingSoon: false,
@@ -630,7 +628,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         description:
             'Multi-class brain MRI scan classification to detect and categorize glioma, meningioma, and pituitary tumors from normal tissue.',
         imagePath: 'assets/images/neurology.jpg',
-        modality: 'BRAIN MRI',
         icon: Icons.psychology_rounded,
         accentColor: const Color(0xFF8E24AA),
         isComingSoon: false,
@@ -646,7 +643,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         description:
             'Automated retinal fundus photography and optical coherence tomography (OCT) diagnostics for diabetic retinopathy and maculopathy.',
         imagePath: 'assets/images/ophthalmology.jpg',
-        modality: 'RETINAL / OCT',
         icon: Icons.visibility_rounded,
         accentColor: const Color(0xFF0288D1),
         isComingSoon: true,
@@ -667,12 +663,10 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 color: isDark
                     ? Colors.transparent
                     : colors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: isDark
                     ? null
-                    : Border.all(
-                        color: colors.primary.withValues(alpha: 0.25),
-                      ),
+                    : Border.all(color: colors.primary.withValues(alpha: 0.25)),
               ),
               child: Icon(
                 Icons.biotech_rounded,
@@ -697,10 +691,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                   const SizedBox(height: 3),
                   Text(
                     'Choose the clinical area for this examination to load the appropriate deep-learning AI model.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 13, color: colors.textSecondary),
                   ),
                 ],
               ),
@@ -814,43 +805,17 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
   Widget _buildActiveSpecialtyHeader(WisteriaColorPalette colors) {
     final isCardiology = _selectedSpecialty == 'Cardiology';
-    final specialtyAccent =
-        isCardiology ? colors.primary : const Color(0xFF8E24AA);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.transparent
-                  : specialtyAccent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-              border: isDark
-                  ? null
-                  : Border.all(
-                      color: specialtyAccent.withValues(alpha: 0.3),
-                    ),
-            ),
-            child: Icon(
-              isCardiology
-                  ? Icons.favorite_rounded
-                  : Icons.psychology_rounded,
-              color: isDark ? Colors.white : specialtyAccent,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -865,29 +830,6 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                         color: colors.textPrimary,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: specialtyAccent.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                        border: Border.all(
-                          color: specialtyAccent.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Text(
-                        _activeModality,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: specialtyAccent,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -895,10 +837,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                   isCardiology
                       ? 'Pneumonia Detection · Chest X-Ray Workflow'
                       : 'Brain Tumor Detection · MRI Workflow',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 12, color: colors.textMuted),
                 ),
               ],
             ),
@@ -953,7 +892,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             color: colors.surfaceContainer,
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.borderSubtle),
           ),
           child: Row(
@@ -973,10 +912,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '·',
-                style: TextStyle(color: colors.textMuted),
-              ),
+              Text('·', style: TextStyle(color: colors.textMuted)),
               const SizedBox(width: 8),
               Text(
                 widget.patientId,
@@ -1022,18 +958,15 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
   Widget _buildImagePicker(WisteriaColorPalette colors) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
-      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+      borderRadius: BorderRadius.zero,
       onTap: _runningInference ? null : _pickImage,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
         decoration: BoxDecoration(
           color: colors.surfaceContainer,
-          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-          border: Border.all(
-            color: colors.border,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.zero,
+          border: Border.all(color: colors.border, width: 1),
         ),
         child: Column(
           children: [
@@ -1044,12 +977,10 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 color: isDark
                     ? Colors.transparent
                     : colors.primary.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: isDark
                     ? null
-                    : Border.all(
-                        color: colors.primary.withValues(alpha: 0.25),
-                      ),
+                    : Border.all(color: colors.primary.withValues(alpha: 0.25)),
               ),
               child: Icon(
                 Icons.add_photo_alternate_outlined,
@@ -1071,10 +1002,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
             const SizedBox(height: 6),
             Text(
               'JPG, PNG, WebP, BMP',
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.textMuted,
-              ),
+              style: TextStyle(fontSize: 12, color: colors.textMuted),
             ),
             const SizedBox(height: 14),
             FilledButton.tonalIcon(
@@ -1101,7 +1029,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -1111,11 +1039,9 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           Container(
             width: double.infinity,
             height: 340,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.black,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(WisteriaRadius.sm),
-              ),
+              borderRadius: BorderRadius.zero,
             ),
             child: Stack(
               fit: StackFit.expand,
@@ -1135,11 +1061,13 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                   top: 12,
                   right: 12,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                       border: Border.all(color: Colors.white24),
                     ),
                     child: Text(
@@ -1231,7 +1159,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Row(
@@ -1284,22 +1212,23 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
               final catalog = _activeModelId != null
                   ? SystemModelCatalog.getById(_activeModelId!)
                   : null;
-              final modelName = catalog?.displayName ??
+              final modelName =
+                  catalog?.displayName ??
                   (_isBrainTumorActive
                       ? 'Brain Tumor ResNet18'
                       : 'Pneumonia ResNet18');
               final modelMeta = catalog != null
                   ? '${catalog.task} · ${catalog.modality} · ${catalog.runtime} · v${catalog.version}'
                   : (_isBrainTumorActive
-                      ? 'Tumor Classification · MRI · ONNX Runtime · v1.0.0'
-                      : 'Pneumonia Classification · X-Ray · ONNX Runtime · v1.0.0');
+                        ? 'Tumor Classification · MRI · ONNX Runtime · v1.0.0'
+                        : 'Pneumonia Classification · X-Ray · ONNX Runtime · v1.0.0');
 
               return Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                   border: Border.all(color: colors.border),
                 ),
                 child: Row(
@@ -1311,7 +1240,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.transparent
                             : colors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        borderRadius: BorderRadius.zero,
                       ),
                       child: Icon(
                         Icons.developer_board_rounded,
@@ -1352,7 +1281,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                       ),
                       decoration: BoxDecoration(
                         color: colors.success.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        borderRadius: BorderRadius.zero,
                         border: Border.all(
                           color: colors.success.withValues(alpha: 0.25),
                         ),
@@ -1391,7 +1320,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                     borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                   ),
                 ),
-                onPressed: _runningInference ||
+                onPressed:
+                    _runningInference ||
                         _selectedImageFile == null ||
                         !_modelAvailable
                     ? null
@@ -1410,8 +1340,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                   _runningInference
                       ? 'Executing Neural Inference...'
                       : _selectedImageFile == null
-                          ? 'Select an image first'
-                          : 'Run $_activeModelDisplayName Analysis',
+                      ? 'Select an image first'
+                      : 'Run $_activeModelDisplayName Analysis',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -1448,7 +1378,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: colors.success.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(
                   color: colors.success.withValues(alpha: 0.25),
                 ),
@@ -1505,10 +1435,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: alertColor.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-            border: Border.all(
-              color: alertColor.withValues(alpha: 0.3),
-            ),
+            borderRadius: BorderRadius.zero,
+            border: Border.all(color: alertColor.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -1517,7 +1445,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 height: 52,
                 decoration: BoxDecoration(
                   color: alertColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                 ),
                 child: Icon(
                   isPneumonia
@@ -1576,8 +1504,16 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
         const SizedBox(height: 16),
 
-        _buildResultRow('Model Identifier', 'Pneumonia ResNet-18 (v1.0.0)', colors),
-        _buildResultRow('Execution Timestamp', _formatDateTime(result.executedAt), colors),
+        _buildResultRow(
+          'Model Identifier',
+          'Pneumonia ResNet-18 (v1.0.0)',
+          colors,
+        ),
+        _buildResultRow(
+          'Execution Timestamp',
+          _formatDateTime(result.executedAt),
+          colors,
+        ),
 
         const SizedBox(height: 12),
         _buildAILabel(colors),
@@ -1590,8 +1526,10 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     WisteriaColorPalette colors,
   ) {
     final isNoTumor = result.prediction == 'notumor';
-    final displayName = BrainTumorInferenceService.classDisplayNames[
-        BrainTumorInferenceService.classLabels.indexOf(result.prediction)];
+    final displayName =
+        BrainTumorInferenceService.classDisplayNames[BrainTumorInferenceService
+            .classLabels
+            .indexOf(result.prediction)];
     final alertColor = isNoTumor ? colors.success : colors.warning;
 
     return _buildSection(
@@ -1606,10 +1544,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: alertColor.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-            border: Border.all(
-              color: alertColor.withValues(alpha: 0.3),
-            ),
+            borderRadius: BorderRadius.zero,
+            border: Border.all(color: alertColor.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -1618,7 +1554,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                 height: 52,
                 decoration: BoxDecoration(
                   color: alertColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                 ),
                 child: Icon(
                   isNoTumor
@@ -1691,8 +1627,16 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
         const SizedBox(height: 16),
 
-        _buildResultRow('Model Identifier', 'Brain Tumor ResNet-18 (v1.0.0)', colors),
-        _buildResultRow('Execution Timestamp', _formatDateTime(result.executedAt), colors),
+        _buildResultRow(
+          'Model Identifier',
+          'Brain Tumor ResNet-18 (v1.0.0)',
+          colors,
+        ),
+        _buildResultRow(
+          'Execution Timestamp',
+          _formatDateTime(result.executedAt),
+          colors,
+        ),
 
         const SizedBox(height: 12),
         _buildAILabel(colors),
@@ -1712,7 +1656,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
@@ -1741,7 +1685,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           ),
           const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             child: LinearProgressIndicator(
               value: percentage.clamp(0.0, 1.0),
               backgroundColor: colors.borderSubtle,
@@ -1760,7 +1704,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Row(
@@ -1796,11 +1740,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       children: [
         Text(
           'Record clinician assessment, clinical correlation, and treatment notes for this examination.',
-          style: TextStyle(
-            fontSize: 12,
-            color: colors.textMuted,
-            height: 1.4,
-          ),
+          style: TextStyle(fontSize: 12, color: colors.textMuted, height: 1.4),
         ),
         const SizedBox(height: 14),
         TextFormField(
@@ -1808,7 +1748,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           maxLines: 4,
           style: TextStyle(color: colors.textPrimary, fontSize: 13),
           decoration: InputDecoration(
-            hintText: 'Enter clinical observations, assessment, and next steps...',
+            hintText:
+                'Enter clinical observations, assessment, and next steps...',
             hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
             fillColor: colors.surfaceContainer,
             border: OutlineInputBorder(
@@ -1838,11 +1779,7 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
 
         Text(
           'Commit the AI inference findings, medical image reference, and clinical notes to the patient record.',
-          style: TextStyle(
-            fontSize: 12,
-            color: colors.textMuted,
-            height: 1.4,
-          ),
+          style: TextStyle(fontSize: 12, color: colors.textMuted, height: 1.4),
         ),
         const SizedBox(height: 18),
 
@@ -1850,19 +1787,16 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
           width: double.infinity,
           child: FilledButton.icon(
             style: FilledButton.styleFrom(
-              backgroundColor:
-                  _examinationSaved ? colors.success : colors.primary,
+              backgroundColor: _examinationSaved
+                  ? colors.success
+                  : colors.primary,
               foregroundColor: colors.textOnPrimary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(WisteriaRadius.sm),
               ),
             ),
-            onPressed:
-                _saving || _examinationSaved ? null : _saveExamination,
+            onPressed: _saving || _examinationSaved ? null : _saveExamination,
             icon: _saving
                 ? SizedBox(
                     width: 18,
@@ -1873,18 +1807,15 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
                     ),
                   )
                 : _examinationSaved
-                    ? const Icon(Icons.check_rounded, size: 20)
-                    : const Icon(Icons.save_rounded, size: 20),
+                ? const Icon(Icons.check_rounded, size: 20)
+                : const Icon(Icons.save_rounded, size: 20),
             label: Text(
               _saving
                   ? 'Committing to Patient Record...'
                   : _examinationSaved
-                      ? 'Examination Saved'
-                      : 'Save & Complete Examination',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+                  ? 'Examination Saved'
+                  : 'Save & Complete Examination',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -1902,12 +1833,13 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     required List<Widget> children,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final showNumber = number != '1' && number != '2';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -1915,32 +1847,34 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
         children: [
           Row(
             children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.transparent
-                      : colors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: isDark
-                      ? null
-                      : Border.all(
-                          color: colors.primary.withValues(alpha: 0.25),
-                        ),
-                ),
-                child: Center(
-                  child: Text(
-                    number,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : colors.primary,
+              if (showNumber) ...[
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.transparent
+                        : colors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.zero,
+                    border: isDark
+                        ? null
+                        : Border.all(
+                            color: colors.primary.withValues(alpha: 0.25),
+                          ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      number,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : colors.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
+                const SizedBox(width: 10),
+              ],
               Icon(
                 icon,
                 size: 18,
@@ -2008,28 +1942,18 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colors.error.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-        border: Border.all(
-          color: colors.error.withValues(alpha: 0.25),
-        ),
+        borderRadius: BorderRadius.zero,
+        border: Border.all(color: colors.error.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 18,
-            color: colors.error,
-          ),
+          Icon(Icons.error_outline_rounded, size: 18, color: colors.error),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.error,
-                height: 1.4,
-              ),
+              style: TextStyle(fontSize: 12, color: colors.error, height: 1.4),
             ),
           ),
         ],
@@ -2044,8 +1968,8 @@ class _CreateExaminationPageState extends State<CreateExaminationPage> {
     final hour = dateTime.hour == 0
         ? 12
         : dateTime.hour > 12
-            ? dateTime.hour - 12
-            : dateTime.hour;
+        ? dateTime.hour - 12
+        : dateTime.hour;
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$day/$month/$year · $hour:$minute $period';
@@ -2059,7 +1983,6 @@ class _SpecialtyCard extends StatefulWidget {
   final String subtitle;
   final String description;
   final String imagePath;
-  final String modality;
   final IconData icon;
   final Color accentColor;
   final bool isComingSoon;
@@ -2070,7 +1993,6 @@ class _SpecialtyCard extends StatefulWidget {
     required this.subtitle,
     required this.description,
     required this.imagePath,
-    required this.modality,
     required this.icon,
     required this.accentColor,
     required this.isComingSoon,
@@ -2091,7 +2013,9 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
     final isEnabled = !widget.isComingSoon && widget.onTap != null;
 
     final borderColor = isEnabled && _isHovered
-        ? (isDark ? const Color(0xFF4D4D4D) : colors.primary.withValues(alpha: 0.75))
+        ? (isDark
+              ? const Color(0xFF4D4D4D)
+              : colors.primary.withValues(alpha: 0.75))
         : colors.border;
 
     return LayoutBuilder(
@@ -2105,11 +2029,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
           width: imageWidth,
           height: isCompact ? 140 : 165,
           child: ClipRRect(
-            borderRadius: isCompact
-                ? BorderRadius.vertical(top: Radius.circular(WisteriaRadius.sm))
-                : BorderRadius.horizontal(
-                    left: Radius.circular(WisteriaRadius.sm),
-                  ),
+            borderRadius: BorderRadius.zero,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -2123,11 +2043,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                   fit: BoxFit.cover,
                   errorBuilder: (ctx, err, stack) => Container(
                     color: colors.surfaceContainer,
-                    child: Icon(
-                      widget.icon,
-                      size: 40,
-                      color: colors.textMuted,
-                    ),
+                    child: Icon(widget.icon, size: 40, color: colors.textMuted),
                   ),
                 ),
                 // Subtle gradient overlay for optimal badge contrast
@@ -2148,40 +2064,6 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                               Colors.transparent,
                               Colors.black.withValues(alpha: 0.50),
                             ],
-                    ),
-                  ),
-                ),
-                // Modality Badge (Bottom Left)
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(widget.icon, size: 12, color: Colors.white),
-                        const SizedBox(width: 5),
-                        Text(
-                          widget.modality,
-                          style: const TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -2223,9 +2105,11 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFE65100).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        borderRadius: BorderRadius.zero,
                         border: Border.all(
-                          color: const Color(0xFFE65100).withValues(alpha: 0.35),
+                          color: const Color(
+                            0xFFE65100,
+                          ).withValues(alpha: 0.35),
                         ),
                       ),
                       child: const Row(
@@ -2257,7 +2141,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                       ),
                       decoration: BoxDecoration(
                         color: colors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                        borderRadius: BorderRadius.zero,
                         border: Border.all(
                           color: colors.primary.withValues(alpha: 0.35),
                         ),
@@ -2291,7 +2175,9 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: widget.isComingSoon ? colors.textMuted : colors.primary,
+                  color: widget.isComingSoon
+                      ? colors.textMuted
+                      : colors.primary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -2323,7 +2209,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                   ),
                   decoration: BoxDecoration(
                     color: colors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    borderRadius: BorderRadius.zero,
                     border: Border.all(color: colors.borderSubtle),
                   ),
                   child: Row(
@@ -2353,8 +2239,10 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: _isHovered ? colors.primary : colors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    color: _isHovered
+                        ? colors.primary
+                        : colors.surfaceContainer,
+                    borderRadius: BorderRadius.zero,
                     border: Border.all(
                       color: _isHovered ? colors.primary : colors.border,
                     ),
@@ -2406,7 +2294,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               ),
               decoration: BoxDecoration(
                 color: colors.surfaceLow,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(
                   color: borderColor,
                   width: isEnabled && _isHovered ? 1.5 : 1,
@@ -2426,11 +2314,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               child: isCompact
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        imagePanel,
-                        contentWidget,
-                        actionWidget,
-                      ],
+                      children: [imagePanel, contentWidget, actionWidget],
                     )
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -2461,4 +2345,3 @@ class _InstalledModelChoice {
     required this.catalog,
   });
 }
-

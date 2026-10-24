@@ -53,13 +53,21 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
     if (patient == null) return;
 
     final nameController = TextEditingController(text: patient.name);
-    final phoneController = TextEditingController(text: patient.phoneNumber ?? '');
+    final phoneController = TextEditingController(
+      text: patient.phoneNumber ?? '',
+    );
     final ageController = TextEditingController(
       text: patient.age != null ? patient.age.toString() : '',
     );
-    final bloodGroupController = TextEditingController(text: patient.bloodGroup ?? '');
-    final otherContactController = TextEditingController(text: patient.otherContact ?? '');
-    final addressController = TextEditingController(text: patient.address ?? '');
+    final bloodGroupController = TextEditingController(
+      text: patient.bloodGroup ?? '',
+    );
+    final otherContactController = TextEditingController(
+      text: patient.otherContact ?? '',
+    );
+    final addressController = TextEditingController(
+      text: patient.address ?? '',
+    );
     String? selectedGender = patient.gender;
 
     final formKey = GlobalKey<FormState>();
@@ -70,7 +78,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
         final dlgColors = WisteriaColors.of(context);
         return AlertDialog(
           backgroundColor: dlgColors.surfaceContainer,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           title: Text(
             'Edit Patient Profile',
             style: TextStyle(
@@ -90,7 +98,9 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                     TextFormField(
                       controller: nameController,
                       style: TextStyle(color: dlgColors.textPrimary),
-                      decoration: const InputDecoration(labelText: 'Full Name *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name *',
+                      ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Name is required';
@@ -130,11 +140,22 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                           initialValue: selectedGender,
                           dropdownColor: dlgColors.surfaceContainer,
                           style: TextStyle(color: dlgColors.textPrimary),
-                          decoration: const InputDecoration(labelText: 'Gender'),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                          ),
                           items: const [
-                            DropdownMenuItem(value: 'Male', child: Text('Male')),
-                            DropdownMenuItem(value: 'Female', child: Text('Female')),
-                            DropdownMenuItem(value: 'Other', child: Text('Other')),
+                            DropdownMenuItem(
+                              value: 'Male',
+                              child: Text('Male'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Female',
+                              child: Text('Female'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Other',
+                              child: Text('Other'),
+                            ),
                           ],
                           onChanged: (val) {
                             setDropState(() => selectedGender = val);
@@ -257,7 +278,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
         final dlgColors = WisteriaColors.of(context);
         return AlertDialog(
           backgroundColor: dlgColors.surfaceContainer,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           title: Text(
             'Delete Patient Record?',
             style: TextStyle(
@@ -295,16 +316,18 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Patient record for "${patient.name}" deleted successfully'),
+          content: Text(
+            'Patient record for "${patient.name}" deleted successfully',
+          ),
           backgroundColor: WisteriaColors.of(context).error,
         ),
       );
       Navigator.of(context).pop('deleted');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete patient: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete patient: $e')));
     }
   }
 
@@ -315,9 +338,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: colors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: colors.primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -392,24 +413,18 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
       decoration: BoxDecoration(
         color: colors.background,
         border: Border(
-          bottom: BorderSide(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.borderSubtle, width: 1),
         ),
       ),
       child: Row(
         children: [
           WisteriaBackButton(
             label: 'Patient Dashboard',
-            onTap: () => Navigator.of(context).pop(_hasModified ? 'updated' : null),
+            onTap: () =>
+                Navigator.of(context).pop(_hasModified ? 'updated' : null),
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 16,
-            width: 1,
-            color: colors.border,
-          ),
+          Container(height: 16, width: 1, color: colors.border),
           const SizedBox(width: 16),
           Text(
             'Patient Information Details',
@@ -433,7 +448,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
         boxShadow: [
           BoxShadow(
@@ -451,6 +466,8 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
             children: [
               PatientAgeAvatar(
                 age: patient.age,
+                dateOfBirth: patient.dateOfBirth,
+                gender: patient.gender,
                 size: 60,
               ),
               const SizedBox(width: 18),
@@ -477,7 +494,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                           ),
                           decoration: BoxDecoration(
                             color: colors.surfaceContainer,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.zero,
                             border: Border.all(color: colors.borderSubtle),
                           ),
                           child: Row(
@@ -510,15 +527,20 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
 
           final actionButtons = Row(
             mainAxisSize: isNarrow ? MainAxisSize.max : MainAxisSize.min,
-            mainAxisAlignment: isNarrow ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isNarrow
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colors.textPrimary,
                   side: BorderSide(color: colors.border),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                   ),
                 ),
                 onPressed: _editPatient,
@@ -531,9 +553,12 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                   backgroundColor: colors.error.withValues(alpha: 0.15),
                   foregroundColor: colors.error,
                   side: BorderSide(color: colors.error.withValues(alpha: 0.3)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
                   ),
                 ),
                 onPressed: _deletePatient,
@@ -570,9 +595,8 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
   Widget _buildDemographicsCard(Patient patient, WisteriaColorPalette colors) {
     return _buildSectionContainer(
       title: 'Clinical Demographics',
-      subtitle: 'Primary physiological indicators and demographic categorization',
-      icon: Icons.badge_outlined,
-      iconColor: const Color(0xFF0284C7),
+      subtitle:
+          'Primary physiological indicators and demographic categorization',
       colors: colors,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -586,7 +610,9 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                       child: _buildDetailField(
                         icon: Icons.cake_outlined,
                         label: 'Age',
-                        value: patient.age != null ? '${patient.age} years' : 'Not provided',
+                        value: patient.age != null
+                            ? '${patient.age} years'
+                            : 'Not provided',
                         colors: colors,
                       ),
                     ),
@@ -627,7 +653,9 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                 _buildDetailField(
                   icon: Icons.cake_outlined,
                   label: 'Age',
-                  value: patient.age != null ? '${patient.age} years' : 'Not provided',
+                  value: patient.age != null
+                      ? '${patient.age} years'
+                      : 'Not provided',
                   colors: colors,
                 ),
                 const SizedBox(height: 14),
@@ -656,8 +684,6 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
     return _buildSectionContainer(
       title: 'Contact & Residential Profile',
       subtitle: 'Primary and secondary points of contact along with residence',
-      icon: Icons.contacts_outlined,
-      iconColor: const Color(0xFF0D9488),
       colors: colors,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -725,19 +751,15 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
   Widget _buildSectionContainer({
     required String title,
     required String subtitle,
-    required IconData icon,
-    required Color iconColor,
     required WisteriaColorPalette colors,
     required Widget child,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -745,17 +767,6 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
         children: [
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isDark ? iconColor.withValues(alpha: 0.15) : iconColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: iconColor.withValues(alpha: 0.25)),
-                ),
-                child: Icon(icon, size: 20, color: iconColor),
-              ),
-              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -772,10 +783,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 12, color: colors.textMuted),
                     ),
                   ],
                 ),
@@ -801,7 +809,7 @@ class _PatientInformationPageState extends State<PatientInformationPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(

@@ -117,7 +117,7 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
                                 ],
                         )
                       : colors.cardGradient,
-                  borderRadius: BorderRadius.circular(WisteriaRadius.lg),
+                  borderRadius: BorderRadius.zero,
                   border: Border.all(
                     color: isDark
                         ? (_isHovered
@@ -234,7 +234,7 @@ class _WisteriaDashboardCardState extends State<WisteriaDashboardCard>
             : (_isHovered
                 ? accent.withValues(alpha: 0.18)
                 : accent.withValues(alpha: 0.10)),
-        borderRadius: BorderRadius.circular(WisteriaRadius.md),
+        borderRadius: BorderRadius.zero,
         border: Border.all(
           color: isDark
               ? (_isHovered ? const Color(0xFF666666) : const Color(0xFF333333))

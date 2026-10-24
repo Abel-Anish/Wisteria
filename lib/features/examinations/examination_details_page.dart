@@ -481,7 +481,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         return AlertDialog(
           backgroundColor: colors.surfaceContainer,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             side: BorderSide(color: colors.border),
           ),
           title: Text(
@@ -547,7 +547,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         return AlertDialog(
           backgroundColor: colors.surfaceContainer,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             side: BorderSide(color: colors.border),
           ),
           title: Text(
@@ -562,8 +562,8 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             mainAxisSize: MainAxisSize.min,
             children: modalities.map((modality) {
               return ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
                 ),
                 title: Text(
                   modality,
@@ -603,7 +603,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
         return Dialog(
           backgroundColor: colors.surfaceLowest,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             side: BorderSide(color: colors.border),
           ),
           child: ConstrainedBox(
@@ -622,7 +622,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                           color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.transparent
                               : colors.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                          borderRadius: BorderRadius.zero,
                         ),
                         child: Icon(
                           Icons.image_outlined,
@@ -927,7 +927,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Row(
@@ -941,7 +941,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.transparent
                   : typeAccent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              borderRadius: BorderRadius.zero,
               border: Theme.of(context).brightness == Brightness.dark
                   ? null
                   : Border.all(
@@ -1201,7 +1201,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
@@ -1268,7 +1268,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colors.surfaceContainer,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Column(
@@ -1306,7 +1306,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               decoration: BoxDecoration(
                 color: colors.surfaceContainer,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Row(
@@ -1345,7 +1345,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: colors.surfaceContainer,
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              borderRadius: BorderRadius.zero,
               border: Border.all(color: colors.border),
             ),
             child: Text(
@@ -1394,7 +1394,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
               decoration: BoxDecoration(
                 color: colors.surfaceContainer,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Column(
@@ -1444,14 +1444,14 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(
           color: isSelected ? colors.primary : colors.borderSubtle,
           width: isSelected ? 1.5 : 1.0,
         ),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         onTap: () {
           setState(() {
             _selectedImageId = image.id;
@@ -1473,7 +1473,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                     height: 80,
                     decoration: BoxDecoration(
                       color: Colors.black,
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                       border: Border.all(color: colors.border),
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -1498,7 +1498,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                             padding: const EdgeInsets.all(3),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.zero,
                             ),
                             child: const Icon(
                               Icons.zoom_in_rounded,
@@ -1542,7 +1542,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                             ),
                             decoration: BoxDecoration(
                               color: colors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                              borderRadius: BorderRadius.zero,
                               border: Border.all(
                                 color: colors.primary.withValues(alpha: 0.3),
                               ),
@@ -1570,7 +1570,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                           ),
                           decoration: BoxDecoration(
                             color: tagColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                            borderRadius: BorderRadius.zero,
                             border: Border.all(
                               color: tagColor.withValues(alpha: 0.25),
                             ),
@@ -1653,7 +1653,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: colors.success.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(
                   color: colors.success.withValues(alpha: 0.25),
                 ),
@@ -1679,7 +1679,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             margin: const EdgeInsets.only(bottom: 18),
             decoration: BoxDecoration(
               color: colors.warning.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              borderRadius: BorderRadius.zero,
               border: Border.all(
                 color: colors.warning.withValues(alpha: 0.18),
               ),
@@ -1736,7 +1736,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: colors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Column(
@@ -1830,7 +1830,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
@@ -1841,10 +1841,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: alertColor.withValues(alpha: 0.08),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(WisteriaRadius.sm),
-                topRight: Radius.circular(WisteriaRadius.sm),
-              ),
+              borderRadius: BorderRadius.zero,
               border: Border(
                 bottom: BorderSide(
                   color: alertColor.withValues(alpha: 0.22),
@@ -1859,7 +1856,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: alertColor.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    borderRadius: BorderRadius.zero,
                     border: Border.all(
                       color: alertColor.withValues(alpha: 0.3),
                     ),
@@ -1904,7 +1901,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: colors.surfaceLow,
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    borderRadius: BorderRadius.zero,
                     border: Border.all(color: colors.border),
                   ),
                   child: Row(
@@ -2021,7 +2018,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: colors.surfaceLow,
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    borderRadius: BorderRadius.zero,
                     border: Border.all(color: colors.borderSubtle),
                   ),
                   child: Column(
@@ -2064,7 +2061,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
@@ -2094,7 +2091,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
           ),
           const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             child: LinearProgressIndicator(
               value: percentage.clamp(0.0, 1.0),
               backgroundColor: colors.borderSubtle,
@@ -2149,7 +2146,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surfaceContainer,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
@@ -2178,7 +2175,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: colors.surfaceLow,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Row(
@@ -2219,7 +2216,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: colors.surfaceLow,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Row(
@@ -2255,7 +2252,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: colors.success.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                     ),
                     child: Text(
                       'ONNX LOCAL',
@@ -2280,7 +2277,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: colors.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.error.withValues(alpha: 0.25)),
               ),
               child: Row(
@@ -2304,7 +2301,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
 
           if (_isRunningInference) ...[
             ClipRRect(
-              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+              borderRadius: BorderRadius.zero,
               child: LinearProgressIndicator(
                 color: colors.primary,
                 backgroundColor: colors.borderSubtle,
@@ -2414,7 +2411,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -2429,7 +2426,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.transparent
                       : colors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                   border: Theme.of(context).brightness == Brightness.dark
                       ? null
                       : Border.all(
@@ -2479,7 +2476,7 @@ class _ExaminationDetailsPageState extends State<ExaminationDetailsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: pillColor.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(
           color: pillColor.withValues(alpha: 0.25),
         ),

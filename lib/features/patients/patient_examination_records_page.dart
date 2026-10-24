@@ -70,8 +70,8 @@ class _PatientExaminationRecordsPageState
     final hour = dateTime.hour == 0
         ? 12
         : dateTime.hour > 12
-            ? dateTime.hour - 12
-            : dateTime.hour;
+        ? dateTime.hour - 12
+        : dateTime.hour;
 
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
@@ -106,9 +106,7 @@ class _PatientExaminationRecordsPageState
     if (_isLoading) {
       return Scaffold(
         backgroundColor: colors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: colors.primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -160,10 +158,7 @@ class _PatientExaminationRecordsPageState
       decoration: BoxDecoration(
         color: colors.background,
         border: Border(
-          bottom: BorderSide(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.borderSubtle, width: 1),
         ),
       ),
       child: Row(
@@ -173,11 +168,7 @@ class _PatientExaminationRecordsPageState
             onTap: () => Navigator.of(context).pop(),
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 16,
-            width: 1,
-            color: colors.border,
-          ),
+          Container(height: 16, width: 1, color: colors.border),
           const SizedBox(width: 16),
           Text(
             'Recorded Examinations Archive',
@@ -199,7 +190,7 @@ class _PatientExaminationRecordsPageState
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Row(
@@ -207,23 +198,6 @@ class _PatientExaminationRecordsPageState
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.assignment_outlined,
-                  color: Color(0xFF0D9488),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -239,10 +213,7 @@ class _PatientExaminationRecordsPageState
                   const SizedBox(height: 2),
                   Text(
                     '${_examinations.length} saved examination${_examinations.length == 1 ? '' : 's'} with AI diagnostic findings for $patientName',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: colors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12.5, color: colors.textMuted),
                   ),
                 ],
               ),
@@ -254,7 +225,7 @@ class _PatientExaminationRecordsPageState
               foregroundColor: colors.textOnPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
               ),
             ),
             onPressed: _startNewExamination,
@@ -272,27 +243,12 @@ class _PatientExaminationRecordsPageState
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: colors.surfaceContainer,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.borderSubtle),
-            ),
-            child: Icon(
-              Icons.folder_open_outlined,
-              size: 32,
-              color: colors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 20),
           Text(
             'No Examinations Recorded',
             style: TextStyle(
@@ -321,7 +277,7 @@ class _PatientExaminationRecordsPageState
               foregroundColor: colors.textOnPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
               ),
             ),
             onPressed: _startNewExamination,
@@ -341,7 +297,8 @@ class _PatientExaminationRecordsPageState
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final exam = _examinations[index];
-        final isMri = exam.examinationType.toUpperCase().contains('MRI') ||
+        final isMri =
+            exam.examinationType.toUpperCase().contains('MRI') ||
             exam.examinationType.toUpperCase().contains('BRAIN');
 
         return _ExaminationRecordCard(
@@ -409,7 +366,7 @@ class _ExaminationRecordCardState extends State<_ExaminationRecordCard> {
             color: _isHovered
                 ? (isDark ? colors.surfaceContainer : colors.surface)
                 : colors.surfaceLow,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.zero,
             border: Border.all(
               color: _isHovered
                   ? colors.primary.withValues(alpha: 0.6)
@@ -421,42 +378,15 @@ class _ExaminationRecordCardState extends State<_ExaminationRecordCard> {
                     BoxShadow(
                       blurRadius: 10,
                       offset: const Offset(0, 3),
-                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.3 : 0.08,
+                      ),
                     ),
                   ]
                 : [],
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.transparent
-                      : (widget.isMri
-                          ? const Color(0xFF8E24AA).withValues(alpha: 0.10)
-                          : colors.primary.withValues(alpha: 0.10)),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: widget.isMri
-                        ? const Color(0xFF8E24AA).withValues(alpha: 0.25)
-                        : colors.primary.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: Icon(
-                  widget.isMri
-                      ? Icons.psychology_outlined
-                      : Icons.favorite_border_rounded,
-                  color: isDark
-                      ? (widget.isMri ? const Color(0xFFCE93D8) : Colors.white)
-                      : (widget.isMri
-                          ? const Color(0xFF8E24AA)
-                          : colors.primary),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,7 +411,7 @@ class _ExaminationRecordCardState extends State<_ExaminationRecordCard> {
                             color: isCompleted
                                 ? colors.success.withValues(alpha: 0.12)
                                 : colors.warning.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.zero,
                             border: Border.all(
                               color: isCompleted
                                   ? colors.success.withValues(alpha: 0.25)
@@ -504,10 +434,7 @@ class _ExaminationRecordCardState extends State<_ExaminationRecordCard> {
                     const SizedBox(height: 4),
                     Text(
                       widget.formattedDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 12, color: colors.textMuted),
                     ),
                     if (widget.examination.doctorNotes != null &&
                         widget.examination.doctorNotes!.trim().isNotEmpty) ...[

@@ -108,9 +108,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
           content: const Text('Doctor profile saved successfully'),
           backgroundColor: colors.primaryMuted,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         ),
       );
     } catch (e) {
@@ -351,29 +349,6 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
 
     return Row(
       children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.transparent
-                : colors.primary.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-            border: Theme.of(context).brightness == Brightness.dark
-                ? null
-                : Border.all(color: colors.primary.withValues(alpha: 0.18)),
-          ),
-          child: Icon(
-            Icons.medical_information_rounded,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : colors.primary,
-            size: 26,
-          ),
-        ),
-
-        const SizedBox(width: 18),
-
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +409,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -495,7 +470,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -590,7 +565,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -611,7 +586,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                   ),
                   decoration: BoxDecoration(
                     color: colors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                    borderRadius: BorderRadius.zero,
                     border: Border.all(
                       color: colors.success.withValues(alpha: 0.25),
                     ),
@@ -646,7 +621,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colors.surfaceLowest,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Row(
@@ -657,7 +632,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                     height: 64,
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                       border: Border.all(
                         color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                       ),
@@ -787,7 +762,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               decoration: BoxDecoration(
                 color: colors.surfaceLowest,
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                borderRadius: BorderRadius.zero,
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Row(
@@ -797,7 +772,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                     height: 44,
                     decoration: BoxDecoration(
                       color: colors.primary.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                     ),
                     child: Icon(
                       Icons.upload_file_outlined,
@@ -886,7 +861,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
             color: colors.surfaceLow,
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.border),
           ),
           child: Form(
@@ -998,7 +973,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: colors.surfaceLowest,
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                       border: Border.all(color: colors.border),
                     ),
                     child: Row(

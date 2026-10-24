@@ -70,9 +70,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: colors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: colors.primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -112,10 +110,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
       decoration: BoxDecoration(
         color: colors.background,
         border: Border(
-          bottom: BorderSide(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.borderSubtle, width: 1),
         ),
       ),
       child: Row(
@@ -125,11 +120,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
             onTap: () => Navigator.of(context).pop(),
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 16,
-            width: 1,
-            color: colors.border,
-          ),
+          Container(height: 16, width: 1, color: colors.border),
           const SizedBox(width: 16),
           Text(
             'Patient Analytics & Clinical Insights',
@@ -151,29 +142,12 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0891B2).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFF0891B2).withValues(alpha: 0.25),
-              ),
-            ),
-            child: const Icon(
-              Icons.analytics_outlined,
-              size: 32,
-              color: Color(0xFF0891B2),
-            ),
-          ),
-          const SizedBox(height: 20),
           Text(
             'No Examination Analytics Available',
             style: TextStyle(
@@ -202,7 +176,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
               foregroundColor: colors.textOnPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
               ),
             ),
             onPressed: () async {
@@ -228,10 +202,15 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
     );
   }
 
-  Widget _buildAnalyticsDashboard(String patientName, WisteriaColorPalette colors) {
+  Widget _buildAnalyticsDashboard(
+    String patientName,
+    WisteriaColorPalette colors,
+  ) {
     final chestXrayCount = _examinations.where((e) {
       final t = e.examinationType.toUpperCase();
-      return t.contains('X-RAY') || t.contains('CHEST') || t.contains('PNEUMONIA');
+      return t.contains('X-RAY') ||
+          t.contains('CHEST') ||
+          t.contains('PNEUMONIA');
     }).length;
 
     final mriCount = _examinations.where((e) {
@@ -240,7 +219,9 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
     }).length;
 
     final otherCount = _examinations.length - (chestXrayCount + mriCount);
-    final completedCount = _examinations.where((e) => e.status.toUpperCase() == 'COMPLETED').length;
+    final completedCount = _examinations
+        .where((e) => e.status.toUpperCase() == 'COMPLETED')
+        .length;
 
     final sortedExams = List<Examination>.from(_examinations)
       ..sort((a, b) => a.examinationDate.compareTo(b.examinationDate));
@@ -256,26 +237,11 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: colors.surfaceLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.border),
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0891B2).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF0891B2).withValues(alpha: 0.3)),
-                ),
-                child: const Icon(
-                  Icons.analytics_rounded,
-                  color: Color(0xFF0891B2),
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,7 +392,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: colors.surfaceLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.border),
           ),
           child: Column(
@@ -448,7 +414,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
               const SizedBox(height: 16),
               // Segmented bar
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.zero,
                 child: SizedBox(
                   height: 16,
                   child: Row(
@@ -479,18 +445,21 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
                 children: [
                   _buildLegendItem(
                     color: colors.primary,
-                    label: 'Chest X-Ray (${(chestXrayCount / _examinations.length * 100).toStringAsFixed(0)}%)',
+                    label:
+                        'Chest X-Ray (${(chestXrayCount / _examinations.length * 100).toStringAsFixed(0)}%)',
                     colors: colors,
                   ),
                   _buildLegendItem(
                     color: const Color(0xFF8B5CF6),
-                    label: 'Brain MRI (${(mriCount / _examinations.length * 100).toStringAsFixed(0)}%)',
+                    label:
+                        'Brain MRI (${(mriCount / _examinations.length * 100).toStringAsFixed(0)}%)',
                     colors: colors,
                   ),
                   if (otherCount > 0)
                     _buildLegendItem(
                       color: const Color(0xFF0284C7),
-                      label: 'Other (${(otherCount / _examinations.length * 100).toStringAsFixed(0)}%)',
+                      label:
+                          'Other (${(otherCount / _examinations.length * 100).toStringAsFixed(0)}%)',
                       colors: colors,
                     ),
                 ],
@@ -507,7 +476,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: colors.surfaceLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.zero,
             border: Border.all(color: colors.border),
           ),
           child: Column(
@@ -525,10 +494,13 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.surfaceContainer,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.zero,
                       border: Border.all(color: colors.borderSubtle),
                     ),
                     child: Text(
@@ -570,7 +542,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -588,7 +560,6 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
                   letterSpacing: 0.5,
                 ),
               ),
-              Icon(icon, size: 18, color: accentColor),
             ],
           ),
           const SizedBox(height: 10),
@@ -604,10 +575,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: colors.textMuted,
-            ),
+            style: TextStyle(fontSize: 11, color: colors.textMuted),
           ),
         ],
       ),
@@ -627,7 +595,7 @@ class _PatientAnalyticsPageState extends State<PatientAnalyticsPage> {
           height: 10,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.zero,
           ),
         ),
         const SizedBox(width: 8),

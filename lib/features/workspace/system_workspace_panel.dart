@@ -56,23 +56,6 @@ class SystemWorkspacePanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                border: Border.all(
-                  color: colors.primary.withValues(alpha: 0.25),
-                ),
-              ),
-              child: Icon(
-                Icons.admin_panel_settings_rounded,
-                color: colors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
             Text(
               'Doctor & System',
               style: TextStyle(
@@ -104,7 +87,6 @@ class SystemWorkspacePanel extends StatelessWidget {
       _SystemCard(
         title: 'Doctor Profile',
         subtitle: 'Manage your professional profile and clinic information',
-        icon: Icons.person_rounded,
         accentColor: WisteriaColors.mutedRose,
         tintColor: WisteriaColors.mutedRose,
         imagePath: 'assets/images/doctor.png',
@@ -113,7 +95,6 @@ class SystemWorkspacePanel extends StatelessWidget {
       _SystemCard(
         title: 'Settings',
         subtitle: 'Application preferences and configuration',
-        icon: Icons.settings_rounded,
         accentColor: WisteriaColors.pink,
         tintColor: WisteriaColors.pink,
         imagePath: 'assets/images/settings.jpg',
@@ -122,7 +103,6 @@ class SystemWorkspacePanel extends StatelessWidget {
       _SystemCard(
         title: 'Models',
         subtitle: 'View preinstalled local AI models',
-        icon: Icons.memory_rounded,
         accentColor: colors.primary,
         tintColor: colors.primary,
         imagePath: 'assets/images/model.jpg',
@@ -131,7 +111,6 @@ class SystemWorkspacePanel extends StatelessWidget {
       _SystemCard(
         title: 'Sync',
         subtitle: 'Data synchronization across workstations',
-        icon: Icons.sync_rounded,
         accentColor: colors.secondary,
         tintColor: colors.primary,
         imagePath: 'assets/images/data sync.jpg',
@@ -140,7 +119,6 @@ class SystemWorkspacePanel extends StatelessWidget {
           const PlaceholderPage(
             title: 'Data Synchronization',
             subtitle: 'Synchronize clinical data across your workstations.',
-            icon: Icons.sync_rounded,
           ),
         ),
       ),
@@ -165,18 +143,26 @@ class SystemWorkspacePanel extends StatelessWidget {
         // Row 1: Doctor Profile (left), Settings (right)
         Row(
           children: [
-            Expanded(child: SizedBox(height: cardHeight, child: cards[0])),
+            Expanded(
+              child: SizedBox(height: cardHeight, child: cards[0]),
+            ),
             const SizedBox(width: 22),
-            Expanded(child: SizedBox(height: cardHeight, child: cards[1])),
+            Expanded(
+              child: SizedBox(height: cardHeight, child: cards[1]),
+            ),
           ],
         ),
         const SizedBox(height: 22),
         // Row 2: Models (left), Sync (right)
         Row(
           children: [
-            Expanded(child: SizedBox(height: cardHeight, child: cards[2])),
+            Expanded(
+              child: SizedBox(height: cardHeight, child: cards[2]),
+            ),
             const SizedBox(width: 22),
-            Expanded(child: SizedBox(height: cardHeight, child: cards[3])),
+            Expanded(
+              child: SizedBox(height: cardHeight, child: cards[3]),
+            ),
           ],
         ),
       ],
@@ -213,7 +199,6 @@ class SystemWorkspacePanel extends StatelessWidget {
 class _SystemCard extends StatefulWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
   final Color accentColor;
   final Color? tintColor;
   final String? imagePath;
@@ -222,7 +207,6 @@ class _SystemCard extends StatefulWidget {
   const _SystemCard({
     required this.title,
     required this.subtitle,
-    required this.icon,
     required this.accentColor,
     this.tintColor,
     this.imagePath,
@@ -284,21 +268,14 @@ class _SystemCardState extends State<_SystemCard>
             final hoverBorderColor = isDark && !(isRose || isPink)
                 ? const Color(0xFF4D4D4D)
                 : widget.accentColor.withValues(alpha: 0.65);
-            final borderColor = Color.lerp(
-              colors.border,
-              hoverBorderColor,
-              t,
-            )!;
+            final borderColor = Color.lerp(colors.border, hoverBorderColor, t)!;
 
             return Transform.translate(
               offset: Offset(0, -2 * t),
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1,
-                  ),
+                  borderRadius: BorderRadius.zero,
+                  border: Border.all(color: borderColor, width: 1),
                   boxShadow: [
                     BoxShadow(
                       blurRadius: isDark ? (6 + (5 * t)) : (4 + (4 * t)),
@@ -310,7 +287,7 @@ class _SystemCardState extends State<_SystemCard>
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                  borderRadius: BorderRadius.zero,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -318,10 +295,10 @@ class _SystemCardState extends State<_SystemCard>
                       Container(
                         color: isDark
                             ? (isRose
-                                ? const Color(0xFF1C151A)
-                                : (isPink
-                                    ? const Color(0xFF1B161B)
-                                    : colors.surface))
+                                  ? const Color(0xFF1C151A)
+                                  : (isPink
+                                        ? const Color(0xFF1B161B)
+                                        : colors.surface))
                             : colors.surface,
                       ),
                       // Background photo
@@ -344,93 +321,93 @@ class _SystemCardState extends State<_SystemCard>
                               stops: const [0.0, 0.40, 0.70, 1.0],
                               colors: isDark
                                   ? (isRose
-                                      ? [
-                                          const Color(0xFFAF6A6A).withValues(
-                                            alpha: 0.09,
-                                          ),
-                                          const Color(0xFF241A1E).withValues(
-                                            alpha: 0.30,
-                                          ),
-                                          const Color(0xFF1E151A).withValues(
-                                            alpha: 0.58,
-                                          ),
-                                          const Color(0xFF16141A).withValues(
-                                            alpha: 0.82,
-                                          ),
-                                        ]
-                                      : (isPink
-                                          ? [
-                                              const Color(0xFFC998A2).withValues(
-                                                alpha: 0.07,
-                                              ),
-                                              const Color(0xFF201A20).withValues(
-                                                alpha: 0.28,
-                                              ),
-                                              const Color(0xFF1B161B).withValues(
-                                                alpha: 0.55,
-                                              ),
-                                              const Color(0xFF151419).withValues(
-                                                alpha: 0.82,
-                                              ),
-                                            ]
-                                          : [
-                                              const Color(0xFF2D2D2D).withValues(
-                                                alpha: 0.10,
-                                              ),
-                                              const Color(0xFF1D1D1D).withValues(
-                                                alpha: 0.30,
-                                              ),
-                                              const Color(0xFF141414).withValues(
-                                                alpha: 0.60,
-                                              ),
-                                              const Color(0xFF0D0D0D).withValues(
-                                                alpha: 0.85,
-                                              ),
-                                            ]))
+                                        ? [
+                                            const Color(
+                                              0xFFAF6A6A,
+                                            ).withValues(alpha: 0.09),
+                                            const Color(
+                                              0xFF241A1E,
+                                            ).withValues(alpha: 0.30),
+                                            const Color(
+                                              0xFF1E151A,
+                                            ).withValues(alpha: 0.58),
+                                            const Color(
+                                              0xFF16141A,
+                                            ).withValues(alpha: 0.82),
+                                          ]
+                                        : (isPink
+                                              ? [
+                                                  const Color(
+                                                    0xFFC998A2,
+                                                  ).withValues(alpha: 0.07),
+                                                  const Color(
+                                                    0xFF201A20,
+                                                  ).withValues(alpha: 0.28),
+                                                  const Color(
+                                                    0xFF1B161B,
+                                                  ).withValues(alpha: 0.55),
+                                                  const Color(
+                                                    0xFF151419,
+                                                  ).withValues(alpha: 0.82),
+                                                ]
+                                              : [
+                                                  const Color(
+                                                    0xFF2D2D2D,
+                                                  ).withValues(alpha: 0.10),
+                                                  const Color(
+                                                    0xFF1D1D1D,
+                                                  ).withValues(alpha: 0.30),
+                                                  const Color(
+                                                    0xFF141414,
+                                                  ).withValues(alpha: 0.60),
+                                                  const Color(
+                                                    0xFF0D0D0D,
+                                                  ).withValues(alpha: 0.85),
+                                                ]))
                                   : (isRose
-                                      ? [
-                                          const Color(0xFFAF6A6A).withValues(
-                                            alpha: 0.06,
-                                          ),
-                                          const Color(0xFFF6ECEC).withValues(
-                                            alpha: 0.18,
-                                          ),
-                                          const Color(0xFFFAF1F1).withValues(
-                                            alpha: 0.52,
-                                          ),
-                                          const Color(0xFFFFFFFF).withValues(
-                                            alpha: 0.85,
-                                          ),
-                                        ]
-                                      : (isPink
-                                          ? [
-                                              const Color(0xFFC998A2).withValues(
-                                                alpha: 0.04,
-                                              ),
-                                              const Color(0xFFF7F0F1).withValues(
-                                                alpha: 0.16,
-                                              ),
-                                              const Color(0xFFFAF4F5).withValues(
-                                                alpha: 0.50,
-                                              ),
-                                              const Color(0xFFFFFFFF).withValues(
-                                                alpha: 0.85,
-                                              ),
-                                            ]
-                                          : [
-                                              const Color(0xFF098FA6).withValues(
-                                                alpha: 0.04,
-                                              ),
-                                              const Color(0xFFE4F0F3).withValues(
-                                                alpha: 0.18,
-                                              ),
-                                              const Color(0xFFEAF4F6).withValues(
-                                                alpha: 0.52,
-                                              ),
-                                              const Color(0xFFFFFFFF).withValues(
-                                                alpha: 0.85,
-                                              ),
-                                            ])),
+                                        ? [
+                                            const Color(
+                                              0xFFAF6A6A,
+                                            ).withValues(alpha: 0.06),
+                                            const Color(
+                                              0xFFF6ECEC,
+                                            ).withValues(alpha: 0.18),
+                                            const Color(
+                                              0xFFFAF1F1,
+                                            ).withValues(alpha: 0.52),
+                                            const Color(
+                                              0xFFFFFFFF,
+                                            ).withValues(alpha: 0.85),
+                                          ]
+                                        : (isPink
+                                              ? [
+                                                  const Color(
+                                                    0xFFC998A2,
+                                                  ).withValues(alpha: 0.04),
+                                                  const Color(
+                                                    0xFFF7F0F1,
+                                                  ).withValues(alpha: 0.16),
+                                                  const Color(
+                                                    0xFFFAF4F5,
+                                                  ).withValues(alpha: 0.50),
+                                                  const Color(
+                                                    0xFFFFFFFF,
+                                                  ).withValues(alpha: 0.85),
+                                                ]
+                                              : [
+                                                  const Color(
+                                                    0xFF098FA6,
+                                                  ).withValues(alpha: 0.04),
+                                                  const Color(
+                                                    0xFFE4F0F3,
+                                                  ).withValues(alpha: 0.18),
+                                                  const Color(
+                                                    0xFFEAF4F6,
+                                                  ).withValues(alpha: 0.52),
+                                                  const Color(
+                                                    0xFFFFFFFF,
+                                                  ).withValues(alpha: 0.85),
+                                                ])),
                             ),
                           ),
                         ),
@@ -452,8 +429,6 @@ class _SystemCardState extends State<_SystemCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildIcon(isDark),
-
               const Spacer(),
 
               Row(
@@ -497,44 +472,6 @@ class _SystemCardState extends State<_SystemCard>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildIcon(bool isDark) {
-    final isRose = widget.tintColor == WisteriaColors.mutedRose;
-    final isPink = widget.tintColor == WisteriaColors.pink;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: isDark
-            ? ((isRose || isPink)
-                ? const Color(0xFF221A20).withValues(alpha: _isHovered ? 0.90 : 0.80)
-                : const Color(0xFF1D1D1D).withValues(alpha: _isHovered ? 0.95 : 0.85))
-            : Colors.white.withValues(alpha: _isHovered ? 0.95 : 0.88),
-        borderRadius: BorderRadius.circular(WisteriaRadius.md),
-        border: Border.all(
-          color: isDark && !(isRose || isPink)
-              ? (_isHovered ? const Color(0xFF666666) : const Color(0xFF333333))
-              : (_isHovered
-                  ? widget.accentColor.withValues(alpha: 0.50)
-                  : widget.accentColor.withValues(alpha: 0.25)),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.05),
-          ),
-        ],
-      ),
-      child: Icon(
-        widget.icon,
-        size: 20,
-        color: isDark && !(isRose || isPink) ? Colors.white : widget.accentColor,
       ),
     );
   }

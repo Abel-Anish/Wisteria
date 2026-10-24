@@ -128,7 +128,7 @@ class _MedicalModelPageState extends State<MedicalModelPage> {
                           ),
                           decoration: BoxDecoration(
                             color: colors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                            borderRadius: BorderRadius.zero,
                             border: Border.all(
                               color: colors.primary.withValues(alpha: 0.3),
                             ),
@@ -223,7 +223,7 @@ class _ModelCardState extends State<_ModelCard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(
           color: _isExpanded ? colors.primary.withValues(alpha: 0.5) : colors.border,
           width: 1,
@@ -241,7 +241,7 @@ class _ModelCardState extends State<_ModelCard> {
           // ── Collapsed Card Header ──
           InkWell(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
-            borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+            borderRadius: BorderRadius.zero,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -254,7 +254,7 @@ class _ModelCardState extends State<_ModelCard> {
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.transparent
                           : colors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                       border: Theme.of(context).brightness == Brightness.dark
                           ? null
                           : Border.all(
@@ -387,7 +387,7 @@ class _ModelCardState extends State<_ModelCard> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: colors.background,
-                      borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                      borderRadius: BorderRadius.zero,
                       border: Border.all(color: colors.border),
                     ),
                     child: Column(
@@ -466,7 +466,7 @@ class _ModelCardState extends State<_ModelCard> {
                             ),
                             decoration: BoxDecoration(
                               color: colors.background,
-                              borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+                              borderRadius: BorderRadius.zero,
                               border: Border.all(color: colors.border),
                             ),
                             child: Row(
@@ -629,7 +629,7 @@ class _ModelCardState extends State<_ModelCard> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(WisteriaRadius.sm),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: border),
       ),
       child: Text(

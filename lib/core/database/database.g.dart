@@ -700,6 +700,17 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _dateOfBirthMeta = const VerificationMeta(
+    'dateOfBirth',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateOfBirth = GeneratedColumn<DateTime>(
+    'date_of_birth',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _bloodGroupMeta = const VerificationMeta(
     'bloodGroup',
   );
@@ -748,6 +759,7 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
     name,
     phoneNumber,
     age,
+    dateOfBirth,
     bloodGroup,
     gender,
     otherContact,
@@ -791,6 +803,15 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
       context.handle(
         _ageMeta,
         age.isAcceptableOrUnknown(data['age']!, _ageMeta),
+      );
+    }
+    if (data.containsKey('date_of_birth')) {
+      context.handle(
+        _dateOfBirthMeta,
+        dateOfBirth.isAcceptableOrUnknown(
+          data['date_of_birth']!,
+          _dateOfBirthMeta,
+        ),
       );
     }
     if (data.containsKey('blood_group')) {
@@ -845,6 +866,10 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
         DriftSqlType.int,
         data['${effectivePrefix}age'],
       ),
+      dateOfBirth: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_of_birth'],
+      ),
       bloodGroup: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}blood_group'],
@@ -875,6 +900,7 @@ class Patient extends DataClass implements Insertable<Patient> {
   final String name;
   final String? phoneNumber;
   final int? age;
+  final DateTime? dateOfBirth;
   final String? bloodGroup;
   final String? gender;
   final String? otherContact;
@@ -884,6 +910,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     required this.name,
     this.phoneNumber,
     this.age,
+    this.dateOfBirth,
     this.bloodGroup,
     this.gender,
     this.otherContact,
@@ -899,6 +926,9 @@ class Patient extends DataClass implements Insertable<Patient> {
     }
     if (!nullToAbsent || age != null) {
       map['age'] = Variable<int>(age);
+    }
+    if (!nullToAbsent || dateOfBirth != null) {
+      map['date_of_birth'] = Variable<DateTime>(dateOfBirth);
     }
     if (!nullToAbsent || bloodGroup != null) {
       map['blood_group'] = Variable<String>(bloodGroup);
@@ -923,6 +953,9 @@ class Patient extends DataClass implements Insertable<Patient> {
           ? const Value.absent()
           : Value(phoneNumber),
       age: age == null && nullToAbsent ? const Value.absent() : Value(age),
+      dateOfBirth: dateOfBirth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateOfBirth),
       bloodGroup: bloodGroup == null && nullToAbsent
           ? const Value.absent()
           : Value(bloodGroup),
@@ -948,6 +981,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       name: serializer.fromJson<String>(json['name']),
       phoneNumber: serializer.fromJson<String?>(json['phoneNumber']),
       age: serializer.fromJson<int?>(json['age']),
+      dateOfBirth: serializer.fromJson<DateTime?>(json['dateOfBirth']),
       bloodGroup: serializer.fromJson<String?>(json['bloodGroup']),
       gender: serializer.fromJson<String?>(json['gender']),
       otherContact: serializer.fromJson<String?>(json['otherContact']),
@@ -962,6 +996,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       'name': serializer.toJson<String>(name),
       'phoneNumber': serializer.toJson<String?>(phoneNumber),
       'age': serializer.toJson<int?>(age),
+      'dateOfBirth': serializer.toJson<DateTime?>(dateOfBirth),
       'bloodGroup': serializer.toJson<String?>(bloodGroup),
       'gender': serializer.toJson<String?>(gender),
       'otherContact': serializer.toJson<String?>(otherContact),
@@ -974,6 +1009,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     String? name,
     Value<String?> phoneNumber = const Value.absent(),
     Value<int?> age = const Value.absent(),
+    Value<DateTime?> dateOfBirth = const Value.absent(),
     Value<String?> bloodGroup = const Value.absent(),
     Value<String?> gender = const Value.absent(),
     Value<String?> otherContact = const Value.absent(),
@@ -983,6 +1019,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     name: name ?? this.name,
     phoneNumber: phoneNumber.present ? phoneNumber.value : this.phoneNumber,
     age: age.present ? age.value : this.age,
+    dateOfBirth: dateOfBirth.present ? dateOfBirth.value : this.dateOfBirth,
     bloodGroup: bloodGroup.present ? bloodGroup.value : this.bloodGroup,
     gender: gender.present ? gender.value : this.gender,
     otherContact: otherContact.present ? otherContact.value : this.otherContact,
@@ -996,6 +1033,9 @@ class Patient extends DataClass implements Insertable<Patient> {
           ? data.phoneNumber.value
           : this.phoneNumber,
       age: data.age.present ? data.age.value : this.age,
+      dateOfBirth: data.dateOfBirth.present
+          ? data.dateOfBirth.value
+          : this.dateOfBirth,
       bloodGroup: data.bloodGroup.present
           ? data.bloodGroup.value
           : this.bloodGroup,
@@ -1014,6 +1054,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           ..write('name: $name, ')
           ..write('phoneNumber: $phoneNumber, ')
           ..write('age: $age, ')
+          ..write('dateOfBirth: $dateOfBirth, ')
           ..write('bloodGroup: $bloodGroup, ')
           ..write('gender: $gender, ')
           ..write('otherContact: $otherContact, ')
@@ -1028,6 +1069,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     name,
     phoneNumber,
     age,
+    dateOfBirth,
     bloodGroup,
     gender,
     otherContact,
@@ -1041,6 +1083,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           other.name == this.name &&
           other.phoneNumber == this.phoneNumber &&
           other.age == this.age &&
+          other.dateOfBirth == this.dateOfBirth &&
           other.bloodGroup == this.bloodGroup &&
           other.gender == this.gender &&
           other.otherContact == this.otherContact &&
@@ -1052,6 +1095,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
   final Value<String> name;
   final Value<String?> phoneNumber;
   final Value<int?> age;
+  final Value<DateTime?> dateOfBirth;
   final Value<String?> bloodGroup;
   final Value<String?> gender;
   final Value<String?> otherContact;
@@ -1062,6 +1106,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     this.name = const Value.absent(),
     this.phoneNumber = const Value.absent(),
     this.age = const Value.absent(),
+    this.dateOfBirth = const Value.absent(),
     this.bloodGroup = const Value.absent(),
     this.gender = const Value.absent(),
     this.otherContact = const Value.absent(),
@@ -1073,6 +1118,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     required String name,
     this.phoneNumber = const Value.absent(),
     this.age = const Value.absent(),
+    this.dateOfBirth = const Value.absent(),
     this.bloodGroup = const Value.absent(),
     this.gender = const Value.absent(),
     this.otherContact = const Value.absent(),
@@ -1085,6 +1131,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     Expression<String>? name,
     Expression<String>? phoneNumber,
     Expression<int>? age,
+    Expression<DateTime>? dateOfBirth,
     Expression<String>? bloodGroup,
     Expression<String>? gender,
     Expression<String>? otherContact,
@@ -1096,6 +1143,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       if (name != null) 'name': name,
       if (phoneNumber != null) 'phone_number': phoneNumber,
       if (age != null) 'age': age,
+      if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
       if (bloodGroup != null) 'blood_group': bloodGroup,
       if (gender != null) 'gender': gender,
       if (otherContact != null) 'other_contact': otherContact,
@@ -1109,6 +1157,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     Value<String>? name,
     Value<String?>? phoneNumber,
     Value<int?>? age,
+    Value<DateTime?>? dateOfBirth,
     Value<String?>? bloodGroup,
     Value<String?>? gender,
     Value<String?>? otherContact,
@@ -1120,6 +1169,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       name: name ?? this.name,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       age: age ?? this.age,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       bloodGroup: bloodGroup ?? this.bloodGroup,
       gender: gender ?? this.gender,
       otherContact: otherContact ?? this.otherContact,
@@ -1142,6 +1192,9 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     }
     if (age.present) {
       map['age'] = Variable<int>(age.value);
+    }
+    if (dateOfBirth.present) {
+      map['date_of_birth'] = Variable<DateTime>(dateOfBirth.value);
     }
     if (bloodGroup.present) {
       map['blood_group'] = Variable<String>(bloodGroup.value);
@@ -1168,6 +1221,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
           ..write('name: $name, ')
           ..write('phoneNumber: $phoneNumber, ')
           ..write('age: $age, ')
+          ..write('dateOfBirth: $dateOfBirth, ')
           ..write('bloodGroup: $bloodGroup, ')
           ..write('gender: $gender, ')
           ..write('otherContact: $otherContact, ')
@@ -8504,6 +8558,7 @@ typedef $$PatientsTableCreateCompanionBuilder =
       required String name,
       Value<String?> phoneNumber,
       Value<int?> age,
+      Value<DateTime?> dateOfBirth,
       Value<String?> bloodGroup,
       Value<String?> gender,
       Value<String?> otherContact,
@@ -8516,6 +8571,7 @@ typedef $$PatientsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> phoneNumber,
       Value<int?> age,
+      Value<DateTime?> dateOfBirth,
       Value<String?> bloodGroup,
       Value<String?> gender,
       Value<String?> otherContact,
@@ -8646,6 +8702,11 @@ class $$PatientsTableFilterComposer
 
   ColumnFilters<int> get age => $composableBuilder(
     column: $table.age,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateOfBirth => $composableBuilder(
+    column: $table.dateOfBirth,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8803,6 +8864,11 @@ class $$PatientsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get dateOfBirth => $composableBuilder(
+    column: $table.dateOfBirth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get bloodGroup => $composableBuilder(
     column: $table.bloodGroup,
     builder: (column) => ColumnOrderings(column),
@@ -8846,6 +8912,11 @@ class $$PatientsTableAnnotationComposer
 
   GeneratedColumn<int> get age =>
       $composableBuilder(column: $table.age, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateOfBirth => $composableBuilder(
+    column: $table.dateOfBirth,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get bloodGroup => $composableBuilder(
     column: $table.bloodGroup,
@@ -9007,6 +9078,7 @@ class $$PatientsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> phoneNumber = const Value.absent(),
                 Value<int?> age = const Value.absent(),
+                Value<DateTime?> dateOfBirth = const Value.absent(),
                 Value<String?> bloodGroup = const Value.absent(),
                 Value<String?> gender = const Value.absent(),
                 Value<String?> otherContact = const Value.absent(),
@@ -9017,6 +9089,7 @@ class $$PatientsTableTableManager
                 name: name,
                 phoneNumber: phoneNumber,
                 age: age,
+                dateOfBirth: dateOfBirth,
                 bloodGroup: bloodGroup,
                 gender: gender,
                 otherContact: otherContact,
@@ -9029,6 +9102,7 @@ class $$PatientsTableTableManager
                 required String name,
                 Value<String?> phoneNumber = const Value.absent(),
                 Value<int?> age = const Value.absent(),
+                Value<DateTime?> dateOfBirth = const Value.absent(),
                 Value<String?> bloodGroup = const Value.absent(),
                 Value<String?> gender = const Value.absent(),
                 Value<String?> otherContact = const Value.absent(),
@@ -9039,6 +9113,7 @@ class $$PatientsTableTableManager
                 name: name,
                 phoneNumber: phoneNumber,
                 age: age,
+                dateOfBirth: dateOfBirth,
                 bloodGroup: bloodGroup,
                 gender: gender,
                 otherContact: otherContact,

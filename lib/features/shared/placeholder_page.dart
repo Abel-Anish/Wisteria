@@ -6,21 +6,16 @@ import '../../core/theme/wisteria_theme.dart';
 class PlaceholderPage extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
-  final Color? accentColor;
 
   const PlaceholderPage({
     super.key,
     required this.title,
     required this.subtitle,
-    required this.icon,
-    this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = WisteriaColors.of(context);
-    final accent = accentColor ?? colors.primary;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -38,28 +33,6 @@ class PlaceholderPage extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Icon container
-                      Container(
-                        width: 88,
-                        height: 88,
-                        decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(
-                            WisteriaRadius.xl,
-                          ),
-                          border: Border.all(
-                            color: accent.withValues(alpha: 0.15),
-                          ),
-                        ),
-                        child: Icon(
-                          icon,
-                          size: 40,
-                          color: accent.withValues(alpha: 0.7),
-                        ),
-                      ),
-
-                      const SizedBox(height: 28),
-
                       // Title
                       Text(
                         title,
@@ -86,7 +59,7 @@ class PlaceholderPage extends StatelessWidget {
 
                       const SizedBox(height: 24),
 
-                      // Status pill
+                      // Status panel
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 18,
@@ -94,9 +67,7 @@ class PlaceholderPage extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: colors.surfaceLow,
-                          borderRadius: BorderRadius.circular(
-                            WisteriaRadius.full,
-                          ),
+                          borderRadius: BorderRadius.zero,
                           border: Border.all(color: colors.border),
                         ),
                         child: Row(
@@ -105,9 +76,7 @@ class PlaceholderPage extends StatelessWidget {
                             Icon(
                               Icons.construction_rounded,
                               size: 16,
-                              color: colors.warning.withValues(
-                                alpha: 0.7,
-                              ),
+                              color: colors.warning.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -176,17 +145,17 @@ class _BackButtonState extends State<_BackButton> {
             color: isDark
                 ? (_isHovered ? const Color(0xFF3D3D3D) : Colors.transparent)
                 : (_isHovered
-                    ? colors.primary.withValues(alpha: 0.10)
-                    : Colors.transparent),
-            borderRadius: BorderRadius.circular(WisteriaRadius.md),
+                      ? colors.primary.withValues(alpha: 0.10)
+                      : Colors.transparent),
+            borderRadius: BorderRadius.zero,
             border: Border.all(
               color: isDark
                   ? (_isHovered
-                      ? const Color(0xFF4D4D4D)
-                      : colors.border.withValues(alpha: 0.5))
+                        ? const Color(0xFF4D4D4D)
+                        : colors.border.withValues(alpha: 0.5))
                   : (_isHovered
-                      ? colors.primary.withValues(alpha: 0.3)
-                      : colors.border.withValues(alpha: 0.5)),
+                        ? colors.primary.withValues(alpha: 0.3)
+                        : colors.border.withValues(alpha: 0.5)),
             ),
           ),
           child: Row(
@@ -197,9 +166,7 @@ class _BackButtonState extends State<_BackButton> {
                 size: 18,
                 color: isDark
                     ? (_isHovered ? Colors.white : colors.textSecondary)
-                    : (_isHovered
-                        ? colors.primary
-                        : colors.textSecondary),
+                    : (_isHovered ? colors.primary : colors.textSecondary),
               ),
               const SizedBox(width: 8),
               Text(
@@ -209,9 +176,7 @@ class _BackButtonState extends State<_BackButton> {
                   fontWeight: FontWeight.w500,
                   color: isDark
                       ? (_isHovered ? Colors.white : colors.textSecondary)
-                      : (_isHovered
-                          ? colors.primary
-                          : colors.textSecondary),
+                      : (_isHovered ? colors.primary : colors.textSecondary),
                 ),
               ),
             ],

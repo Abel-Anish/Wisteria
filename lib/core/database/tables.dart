@@ -42,6 +42,8 @@ class Patients extends Table {
 
   IntColumn get age => integer().nullable()();
 
+  DateTimeColumn get dateOfBirth => dateTime().nullable()();
+
   TextColumn get bloodGroup => text().nullable()();
 
   TextColumn get gender => text().nullable()();

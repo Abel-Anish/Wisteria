@@ -60,29 +60,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         // ── Header ──
                         Row(
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: colors.primary.withValues(
-                                  alpha: 0.10,
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                  WisteriaRadius.md,
-                                ),
-                                border: Border.all(
-                                  color: colors.primary.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.settings_rounded,
-                                color: colors.primary,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -147,10 +124,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                             ),
-                            Divider(
-                              color: colors.border,
-                              height: 32,
-                            ),
+                            Divider(color: colors.border, height: 32),
                             _buildSettingRow(
                               colors: colors,
                               label: 'Runtime',
@@ -164,10 +138,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                             ),
-                            Divider(
-                              color: colors.border,
-                              height: 32,
-                            ),
+                            Divider(color: colors.border, height: 32),
                             _buildSettingRow(
                               colors: colors,
                               label: 'Storage',
@@ -263,10 +234,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 3),
               Text(
                 description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colors.textMuted,
-                ),
+                style: TextStyle(fontSize: 12, color: colors.textMuted),
               ),
             ],
           ),
@@ -359,9 +327,7 @@ class _ThemeOption extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected
-                    ? colors.textOnPrimary
-                    : colors.textSecondary,
+                color: isSelected ? colors.textOnPrimary : colors.textSecondary,
               ),
               const SizedBox(width: 6),
               Text(
